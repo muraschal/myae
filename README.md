@@ -271,3 +271,8 @@ API keys can be generated in the user dashboard or through the `/api/auth/key` e
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🔄 Status
+
+Current status: API and frontend implemented. Vercel deployment active and ready for testing.
+Last updated: März 2024
