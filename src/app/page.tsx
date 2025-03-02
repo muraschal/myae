@@ -51,7 +51,7 @@ export default function Home() {
       <div className="container max-w-4xl mx-auto p-6 md:p-8">
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-            myAE
+            myÆ
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">AI Memory System</p>
         </header>
