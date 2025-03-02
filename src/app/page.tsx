@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 
+// Define error type
+type ApiError = Error | { message: string };
+
 export default function Home() {
   const [prompt, setPrompt] = useState('');
   const [result, setResult] = useState('');
@@ -29,8 +32,15 @@ export default function Home() {
       }
       
       setResult(data.result);
-    } catch (err: any) {
-      setError(err.message || 'Ein Fehler ist aufgetreten');
+    } catch (err: unknown) {
+      // Type guard to check if error has a message property
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : typeof err === 'object' && err !== null && 'message' in err 
+          ? String((err as ApiError).message) 
+          : 'Ein Fehler ist aufgetreten';
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

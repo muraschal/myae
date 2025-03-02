@@ -6,6 +6,12 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Define types for better type safety
+type ChatMessage = {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+};
+
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
@@ -21,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare the messages for OpenAI
-    const messages = [
+    const messages: ChatMessage[] = [
       {
         role: 'system',
         content: context || 'Du bist ein hilfreicher Assistent, der präzise und informative Antworten gibt.',
@@ -56,11 +62,29 @@ export async function POST(request: NextRequest) {
       tokens,
       id: completion.id,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error calling OpenAI:', error);
     
+    // Type guard to check if error is an object with response property
+    const isOpenAIError = (err: unknown): err is { 
+      response: { 
+        data: { 
+          error: { 
+            message: string; 
+            code: string; 
+          } 
+        }; 
+        status: number; 
+      } 
+    } => {
+      return typeof err === 'object' && 
+             err !== null && 
+             'response' in err && 
+             typeof (err as any).response === 'object';
+    };
+    
     // Handle different types of errors
-    if (error.response) {
+    if (isOpenAIError(error)) {
       // OpenAI API error
       return NextResponse.json(
         { 
@@ -71,8 +95,9 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Generic error
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       return NextResponse.json(
-        { error: error.message || 'Internal server error', code: 'internal_error' },
+        { error: errorMessage, code: 'internal_error' },
         { status: 500 }
       );
     }
