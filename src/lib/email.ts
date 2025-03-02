@@ -21,7 +21,7 @@ export async function sendResponseEmail(
 ) {
   try {
     const response = await resend.emails.send({
-      from: 'MyAE <ai@myae.app>',
+      from: 'MyAE <ai@rapold.io>',
       to: recipient,
       subject: `KI-Antwort: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
       text: `Anfrage: ${prompt}\n\nAntwort: ${result}`,
