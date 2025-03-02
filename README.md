@@ -36,24 +36,54 @@ myAE is an AI-powered memory system that uses OpenAI GPT to deliver personalized
 
 The system is built with a serverless-first approach:
 
-- **API Routes**: Next.js API routes for OpenAI integration
+### API Routes
+
+- **Next.js API routes for OpenAI integration**
   - `/api/gpt` – Communicates with OpenAI GPT
   - Uses `fetch` for OpenAI API calls
   - Returns JSON responses with `NextResponse.json()`
-- **Memory System**: Three-tiered memory system (short-term, long-term, semantic)
-- **Environment Variables**:
-  - Stored in Vercel → Environment Variables
+
+#### Example API Usage
+
+**POST Request to `/api/gpt`:**
+
+```json
+{
+  "prompt": "How does Bitcoin work?"
+}
+```
+
+**Response:**
+
+```json
+{
+  "result": "Bitcoin is a decentralized digital currency system..."
+}
+```
+
+### Memory System
+
+- **Three-tiered memory system**:
+  - Short-term (Redis): For temporary context and recent interactions
+  - Long-term (PostgreSQL): For persistent user data and preferences
+  - Semantic (Vector DB): For context-aware retrieval of past interactions
+
+### Environment Variables
+
+- **Stored in Vercel → Environment Variables**
   - `OPENAI_API_KEY` → API key for OpenAI
   - `APP_ENV` → "production" or "development"
-- **Extensibility**: 
-  - **Email Service**: Resend API / Postmark for daily emails
-    - Generates personalized content from OpenAI API
-    - Content based on stored preferences from memory layer
-  - **Telegram Integration** (future): 
-    - Possibility to connect a Telegram bot that uses myAE's AI functionality
-    - API routes could receive requests via Telegram and generate responses
-  - **Web Frontend** (optional):
-    - Dashboard in Next.js for managing memory data and personalizing AI responses
+
+### Extensibility
+
+- **Email Service**: Resend API / Postmark for daily emails
+  - Generates personalized content from OpenAI API
+  - Content based on stored preferences from memory layer
+- **Telegram Integration** (future): 
+  - Possibility to connect a Telegram bot that uses myAE's AI functionality
+  - API routes could receive requests via Telegram and generate responses
+- **Web Frontend** (optional):
+  - Dashboard in Next.js for managing memory data and personalizing AI responses
 
 ## 🛠️ Getting Started
 
@@ -78,19 +108,30 @@ The system is built with a serverless-first approach:
 
 ## 🚢 Deployment & DevOps
 
-- **GitHub → Vercel Deployment Pipeline**:
-  - Code stored in a private GitHub repository
-  - Vercel detects commits & automatically builds new versions
-  - Branch protection for main to prevent unwanted changes
-- **CI/CD Automation**:
-  - GitHub Actions (future possibility) for tests & QA before deployments
-  - Logging & monitoring via Vercel Logs
+### GitHub → Vercel Deployment Pipeline
+
+- Code stored in a private GitHub repository
+- Vercel detects commits & automatically builds new versions
+- Branch protection for main to prevent unwanted changes
+
+### CI/CD Automation
+
+- GitHub Actions (future possibility) for tests & QA before deployments
+- Logging & monitoring via Vercel Logs
+
+## 💡 Use Cases
+
+- **Daily Personalized Messages**: Receive AI-generated insights based on your preferences and past interactions
+- **Memory-Enhanced Responses**: AI responses that remember your previous conversations and preferences
+- **Multi-Channel Access**: Access your AI memory system via email, Telegram (future), or web interface
 
 ## 🔖 Next Steps
 
 - Optimize the API route `/api/gpt` further
 - Memory integration with Supabase/Pinecone as the next milestone
 - First live tests with API requests and OpenAI response tuning
+- Implement email notification system
+- Develop Telegram bot integration
 
 ## 📄 License
 
