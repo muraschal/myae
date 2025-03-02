@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { sendResponseEmail } from '@/lib/email';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
       completion: completion.usage?.completion_tokens || 0,
       total: completion.usage?.total_tokens || 0,
     };
+
+    // Send email with the response
+    if (result) {
+      await sendResponseEmail(prompt, result);
+    }
 
     // Return the response
     return NextResponse.json({

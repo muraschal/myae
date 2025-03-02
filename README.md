@@ -26,6 +26,10 @@ myÆ is an AI-powered memory system that uses OpenAI GPT to deliver personalized
   - **Semantic**: Pinecone (Vector DB)
     - Stores previous AI interactions as vectors to preserve context over time
     - Uses semantic search to retrieve previous relevant answers
+- **Email Service**:
+  - **Resend**: Modern email API for sending AI responses via email
+  - Automatic email delivery of AI-generated content
+  - Customizable templates for email formatting
 - **Deployment**: Vercel
   - Automatic scaling, no server management
   - Direct GitHub integration for continuous deployment
@@ -39,7 +43,8 @@ The system is built with a serverless-first approach:
 ### API Routes
 
 - **Next.js API routes for OpenAI integration**
-  - `/api/gpt` – Communicates with OpenAI GPT
+  - `/api/gpt` – Communicates with OpenAI GPT and sends responses via email
+  - `/api/email-test` – Test endpoint for email functionality
   - Uses `fetch` for OpenAI API calls
   - Returns JSON responses with `NextResponse.json()`
 
@@ -57,7 +62,13 @@ The system is built with a serverless-first approach:
 
 ```json
 {
-  "result": "Bitcoin is a decentralized digital currency system..."
+  "result": "Bitcoin is a decentralized digital currency system...",
+  "tokens": {
+    "prompt": 10,
+    "completion": 150,
+    "total": 160
+  },
+  "id": "chat-xyz123"
 }
 ```
 
@@ -68,15 +79,26 @@ The system is built with a serverless-first approach:
   - Long-term (PostgreSQL): For persistent user data and preferences
   - Semantic (Vector DB): For context-aware retrieval of past interactions
 
+### Email System
+
+- **Automatic email delivery of AI responses**:
+  - Every GPT response is automatically emailed to a predefined address
+  - Uses Resend API for reliable email delivery
+  - Formatted HTML emails with clear prompt and response sections
+  - Test endpoint available at `/api/email-test`
+
 ### Environment Variables
 
 - **Stored in Vercel → Environment Variables**
   - `OPENAI_API_KEY` → API key for OpenAI
+  - `RESEND_API_KEY` → API key for Resend email service
   - `APP_ENV` → "production" or "development"
+  - `UPSTASH_REDIS_REST_URL` → URL for Upstash Redis
+  - `UPSTASH_REDIS_REST_TOKEN` → Token for Upstash Redis
 
 ### Extensibility
 
-- **Email Service**: Resend API / Postmark for daily emails
+- **Email Service**: Resend API for AI response emails
   - Generates personalized content from OpenAI API
   - Content based on stored preferences from memory layer
 - **Telegram Integration** (future): 
@@ -93,7 +115,7 @@ myÆ provides several API endpoints for interacting with the AI memory system:
 
 **Method:** POST
 
-**Description:** Send prompts to OpenAI GPT and receive AI-generated responses.
+**Description:** Send prompts to OpenAI GPT, receive AI-generated responses, and automatically email the response.
 
 **Request Body:**
 ```json
@@ -119,11 +141,32 @@ myÆ provides several API endpoints for interacting with the AI memory system:
 }
 ```
 
+**Side Effects:**
+- Automatically sends an email containing the prompt and response to the configured recipient
+
 **Error Response:**
 ```json
 {
   "error": "string",            // Error message
   "code": "string"              // Error code
+}
+```
+
+### `/api/email-test` - Test Email Functionality
+
+**Method:** GET
+
+**Description:** Send a test email to verify the email service is working properly.
+
+**Response:**
+```json
+{
+  "success": boolean,
+  "message": "string",
+  "result": {
+    "success": boolean,
+    "data": {}                  // Response data from the email service
+  }
 }
 ```
 
@@ -227,18 +270,24 @@ API keys can be generated in the user dashboard or through the `/api/auth/key` e
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env.local` and fill in your API keys
+3. Copy `.env.example` to `.env.local` and fill in your API keys:
+   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `RESEND_API_KEY` - Your Resend API key for email functionality
+   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (if using memory features)
 4. Run the development server:
    ```bash
    npm run dev
    ```
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Test the email functionality by visiting [http://localhost:3000/api/email-test](http://localhost:3000/api/email-test)
 
 ## 📦 Dependencies
 
 - `@upstash/redis`: For short-term memory storage
 - `@supabase/supabase-js`: For long-term memory storage
 - `@pinecone-database/pinecone`: For semantic memory storage
+- `openai`: OpenAI API client for AI integration
+- `resend`: Modern email API for sending AI responses
 - `eventsource-parser`: For streaming OpenAI responses
 
 ## 🚢 Deployment & DevOps
