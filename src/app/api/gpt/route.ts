@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       return typeof err === 'object' && 
              err !== null && 
              'response' in err && 
-             typeof (err as any).response === 'object';
+             typeof (err as {response: unknown}).response === 'object';
     };
     
     // Handle different types of errors
