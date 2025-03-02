@@ -85,6 +85,141 @@ The system is built with a serverless-first approach:
 - **Web Frontend** (optional):
   - Dashboard in Next.js for managing memory data and personalizing AI responses
 
+## 📡 API Documentation
+
+myAE provides several API endpoints for interacting with the AI memory system:
+
+### `/api/gpt` - Main GPT Interaction
+
+**Method:** POST
+
+**Description:** Send prompts to OpenAI GPT and receive AI-generated responses.
+
+**Request Body:**
+```json
+{
+  "prompt": "string",           // Required: The prompt to send to GPT
+  "context": "string",          // Optional: Additional context for the prompt
+  "temperature": number,        // Optional: Controls randomness (0.0-1.0, default: 0.7)
+  "max_tokens": number,         // Optional: Maximum response length (default: 500)
+  "stream": boolean             // Optional: Enable streaming response (default: false)
+}
+```
+
+**Response:**
+```json
+{
+  "result": "string",           // The AI-generated response
+  "tokens": {                   // Token usage information
+    "prompt": number,
+    "completion": number,
+    "total": number
+  },
+  "id": "string"                // Unique identifier for this interaction
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "string",            // Error message
+  "code": "string"              // Error code
+}
+```
+
+### `/api/memory/store` - Store Memory
+
+**Method:** POST
+
+**Description:** Store information in the memory system.
+
+**Request Body:**
+```json
+{
+  "content": "string",          // Required: Content to store
+  "type": "string",             // Required: Type of memory (e.g., "note", "preference")
+  "tags": ["string"],           // Optional: Tags for categorization
+  "ttl": number                 // Optional: Time-to-live in seconds (for short-term memory)
+}
+```
+
+**Response:**
+```json
+{
+  "id": "string",               // Unique identifier for the stored memory
+  "success": boolean
+}
+```
+
+### `/api/memory/retrieve` - Retrieve Memory
+
+**Method:** POST
+
+**Description:** Retrieve information from the memory system.
+
+**Request Body:**
+```json
+{
+  "query": "string",            // Required: Search query
+  "type": "string",             // Optional: Filter by memory type
+  "tags": ["string"],           // Optional: Filter by tags
+  "limit": number               // Optional: Maximum number of results (default: 10)
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "id": "string",
+      "content": "string",
+      "type": "string",
+      "tags": ["string"],
+      "created_at": "string",
+      "relevance_score": number
+    }
+  ],
+  "count": number
+}
+```
+
+### `/api/email/subscribe` - Email Subscription
+
+**Method:** POST
+
+**Description:** Subscribe to daily AI-generated emails.
+
+**Request Body:**
+```json
+{
+  "email": "string",            // Required: Email address
+  "preferences": {              // Optional: Content preferences
+    "topics": ["string"],
+    "frequency": "string",      // "daily", "weekly", etc.
+    "time": "string"            // Preferred delivery time
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": boolean,
+  "message": "string"
+}
+```
+
+### Authentication
+
+All API endpoints (except public ones) require authentication using an API key:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+API keys can be generated in the user dashboard or through the `/api/auth/key` endpoint.
+
 ## 🛠️ Getting Started
 
 1. Clone the repository
@@ -136,7 +271,3 @@ The system is built with a serverless-first approach:
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📚 Documentation
-
-For more detailed technical information, see [techsack.md](techsack.md) (in German).
