@@ -1,10 +1,10 @@
-# myAE - AI Memory System
+# myÆ - AI Memory System
 
-myAE is a personalized AI Memory System for daily insights and automation, built with Next.js and OpenAI GPT.
+myÆ is a personalized AI Memory System for daily insights and automation, built with Next.js and OpenAI GPT.
 
 ## 📌 Project Overview
 
-myAE is an AI-powered memory system that uses OpenAI GPT to deliver personalized daily messages and intelligent responses. The architecture is serverless-first, optimized for Vercel, and designed for scalability.
+myÆ is an AI-powered memory system that uses OpenAI GPT to deliver personalized daily messages and intelligent responses. The architecture is serverless-first, optimized for Vercel, and designed for scalability.
 
 ## 🚀 Tech Stack
 
@@ -15,7 +15,7 @@ myAE is an AI-powered memory system that uses OpenAI GPT to deliver personalized
 - **AI Integration**: 
   - OpenAI GPT-4-Turbo for core functionality
   - API routes in Next.js for OpenAI requests
-  - Claude (only used for development support in Cursor, not integrated in myAE)
+  - Claude (only used for development support in Cursor, not integrated in myÆ)
 - **Memory Layers**:
   - **Short-term**: Upstash Redis (serverless key-value storage)
     - Stores temporary contexts like daily mood or recent AI interactions
@@ -80,14 +80,14 @@ The system is built with a serverless-first approach:
   - Generates personalized content from OpenAI API
   - Content based on stored preferences from memory layer
 - **Telegram Integration** (future): 
-  - Possibility to connect a Telegram bot that uses myAE's AI functionality
+  - Possibility to connect a Telegram bot that uses myÆ's AI functionality
   - API routes could receive requests via Telegram and generate responses
 - **Web Frontend** (optional):
   - Dashboard in Next.js for managing memory data and personalizing AI responses
 
 ## 📡 API Documentation
 
-myAE provides several API endpoints for interacting with the AI memory system:
+myÆ provides several API endpoints for interacting with the AI memory system:
 
 ### `/api/gpt` - Main GPT Interaction
 
