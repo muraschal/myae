@@ -1,163 +1,135 @@
-myAE – Techstack & Architektur
+# myAE – Techstack & Architektur
 
-📌 Projektziel
+## 📌 Projektziel
 
 myAE ist ein AI-gestütztes Memory-System, das OpenAI GPT nutzt, um personalisierte tägliche Nachrichten und intelligente Antworten zu liefern. Die Architektur ist serverless-first, optimiert für Vercel und auf Skalierbarkeit ausgelegt.
 
-1️⃣ Infrastruktur & Hosting
+## 1️⃣ Infrastruktur & Hosting
 
-Backend: Vercel
+**Backend: Vercel**
 
 Vercel wird als serverless Deployment-Umgebung genutzt, um das Projekt einfach und performant zu hosten.
 
-Vorteile:
+### Vorteile:
 
-Automatisches Scaling, keine Serververwaltung
+- Automatisches Scaling, keine Serververwaltung
+- Direkte GitHub-Integration für Continuous Deployment
+- Unterstützt Next.js nativ (keine manuelle Konfiguration nötig)
 
-Direkte GitHub-Integration für Continuous Deployment
+## 2️⃣ Tech-Stack & Hauptkomponenten
 
-Unterstützt Next.js nativ (keine manuelle Konfiguration nötig)
+### 🔹 Programmiersprache & Framework
 
-2️⃣ Tech-Stack & Hauptkomponenten
+- **Next.js (App Router, TypeScript)**
+  - API-Endpoints liegen in `src/app/api/[route]/route.ts`
+  - Unterstützt serverseitige Logik und Middleware direkt
+- **TypeScript**
+  - Statische Typisierung für sauberen Code und bessere Skalierbarkeit
 
-🔹 Programmiersprache & Framework
+### 🔹 KI-Integration
 
-Next.js (App Router, TypeScript)
+- **Haupt-KI: OpenAI GPT (über API)**
+  - Modell: GPT-4-Turbo
+  - API-Routen in Next.js für Anfragen an OpenAI
+- **Claude (nur für Coding in Cursor)**
+  - Nicht in myAE integriert, sondern nur für Entwicklungs-Support in Cursor
 
-API-Endpoints liegen in src/app/api/[route]/route.ts
+## 3️⃣ Datenhaltung & Memory Layer
 
-Unterstützt serverseitige Logik und Middleware direkt
+### 🔹 Environment Variables (Secrets)
 
-TypeScript
+- Gespeichert in Vercel → Environment Variables
+  - `OPENAI_API_KEY` → API-Key für OpenAI
+  - `APP_ENV` → "production" oder "development"
 
-Statische Typisierung für sauberen Code und bessere Skalierbarkeit
+### 🔹 Kurzzeit-Speicher
 
-🔹 KI-Integration
+- **Upstash Redis** (serverless key-value storage)
+  - Speichert temporäre Kontexte, z. B. Tagesstimmung oder letzte AI-Interaktionen
+  - Daten werden nach einer definierten Zeit automatisch gelöscht
 
-Haupt-KI: OpenAI GPT (über API)
+### 🔹 Langzeit-Speicher
 
-Modell: GPT-4-Turbo
+- **Supabase (PostgreSQL)**
+  - Speichert persistente Daten, z. B. User-Präferenzen und langfristige Memory-Daten
+  - Open-Source Firebase-Alternative mit API-Support
 
-API-Routen in Next.js für Anfragen an OpenAI
+### 🔹 Semantischer Speicher
 
-Claude (nur für Coding in Cursor)
+- **Pinecone (Vector DB)**
+  - Speichert frühere AI-Interaktionen als Vektoren, um den Kontext über Zeit zu bewahren
+  - Nutzt semantische Suche, um frühere relevante Antworten abzurufen
 
-Nicht in myAE integriert, sondern nur für Entwicklungs-Support in Cursor
+## 4️⃣ API-Architektur
 
-3️⃣ Datenhaltung & Memory Layer
+### 🔹 API-Endpoints (Serverless)
 
-🔹 Environment Variables (Secrets)
+#### 📍 /api/gpt – Kommuniziert mit OpenAI GPT
 
-Gespeichert in Vercel → Environment Variables
+**POST-Anfrage:**
 
-OPENAI_API_KEY → API-Key für OpenAI
-
-APP_ENV → "production" oder "development"
-
-🔹 Kurzzeit-Speicher
-
-Upstash Redis (serverless key-value storage)
-
-Speichert temporäre Kontexte, z. B. Tagesstimmung oder letzte AI-Interaktionen
-
-Daten werden nach einer definierten Zeit automatisch gelöscht
-
-🔹 Langzeit-Speicher
-
-Supabase (PostgreSQL)
-
-Speichert persistente Daten, z. B. User-Präferenzen und langfristige Memory-Daten
-
-Open-Source Firebase-Alternative mit API-Support
-
-🔹 Semantischer Speicher
-
-Pinecone (Vector DB)
-
-Speichert frühere AI-Interaktionen als Vektoren, um den Kontext über Zeit zu bewahren
-
-Nutzt semantische Suche, um frühere relevante Antworten abzurufen
-
-4️⃣ API-Architektur
-
-🔹 API-Endpoints (Serverless)
-
-📍 /api/gpt – Kommuniziert mit OpenAI GPT
-
-POST-Anfrage:
-
+```json
 {
   "prompt": "Wie funktioniert Bitcoin?"
 }
+```
 
-Antwort:
+**Antwort:**
 
+```json
 {
   "result": "Bitcoin ist ein dezentrales digitales Währungssystem..."
 }
+```
 
-Implementierung in src/app/api/gpt/route.ts
+- Implementierung in `src/app/api/gpt/route.ts`
+- Nutzt `fetch` für OpenAI API-Aufrufe
+- Gibt JSON-Response mit `NextResponse.json()` zurück
 
-Nutzt fetch für OpenAI API-Aufrufe
+## 5️⃣ User-Interfaces & Erweiterungen
 
-Gibt JSON-Response mit NextResponse.json() zurück
+### 🔹 E-Mail-Service
 
-5️⃣ User-Interfaces & Erweiterungen
+- **Resend API / Postmark** für tägliche Mails
+  - Generiert personalisierte Inhalte aus OpenAI API
+  - Inhalte basieren auf gespeicherten Präferenzen aus Memory-Layer
 
-🔹 E-Mail-Service
+### 🔹 Telegram-Integration (Zukunft)
 
-Resend API / Postmark für tägliche Mails
+- Möglichkeit zur Anbindung eines Telegram-Bots, der myAEs AI-Funktionalität nutzt
+- API-Routen könnten Anfragen über Telegram empfangen und Antworten generieren
 
-Generiert personalisierte Inhalte aus OpenAI API
+### 🔹 Web-Frontend (optional)
 
-Inhalte basieren auf gespeicherten Präferenzen aus Memory-Layer
+- Falls nötig, könnte ein Dashboard in Next.js entwickelt werden
+- UI zur Verwaltung von Memory-Daten und Personalisierung von AI-Antworten
 
-🔹 Telegram-Integration (Zukunft)
+## 6️⃣ Deployment & DevOps
 
-Möglichkeit zur Anbindung eines Telegram-Bots, der myAEs AI-Funktionalität nutzt
+### 🔹 GitHub → Vercel Deployment-Pipeline
 
-API-Routen könnten Anfragen über Telegram empfangen und Antworten generieren
+- Code ist in einem privaten GitHub-Repository gespeichert
+- Vercel erkennt Commits & baut automatisch neue Versionen
+- Branch Protection für main, um ungewollte Änderungen zu verhindern
 
-🔹 Web-Frontend (optional)
+### 🔹 CI/CD Automatisierung
 
-Falls nötig, könnte ein Dashboard in Next.js entwickelt werden
+- GitHub Actions (später möglich) für Tests & QA vor Deployments
+- Logging & Monitoring über Vercel Logs
 
-UI zur Verwaltung von Memory-Daten und Personalisierung von AI-Antworten
+## 📌 Fazit – Zusammenfassung
 
-6️⃣ Deployment & DevOps
-
-🔹 GitHub → Vercel Deployment-Pipeline
-
-Code ist in einem privaten GitHub-Repository gespeichert
-
-Vercel erkennt Commits & baut automatisch neue Versionen
-
-Branch Protection für main, um ungewollte Änderungen zu verhindern
-
-🔹 CI/CD Automatisierung
-
-GitHub Actions (später möglich) für Tests & QA vor Deployments
-
-Logging & Monitoring über Vercel Logs
-
-📌 Fazit – Zusammenfassung
-
-Serverless-Backend auf Vercel, optimiert für Skalierung
-
-Next.js API-Routen mit OpenAI GPT-Integration
-
-Redis für Kurzzeit-Speicher, PostgreSQL für Langzeit-Daten, Vector DB für semantisches Memory
-
-Erweiterbar für Telegram-Bots, E-Mail-Automation und Web-Dashboards
+- Serverless-Backend auf Vercel, optimiert für Skalierung
+- Next.js API-Routen mit OpenAI GPT-Integration
+- Redis für Kurzzeit-Speicher, PostgreSQL für Langzeit-Daten, Vector DB für semantisches Memory
+- Erweiterbar für Telegram-Bots, E-Mail-Automation und Web-Dashboards
 
 Das System kombiniert AI, Memory-Persistenz & Serverless-Optimierung, um ein skalierbares, intelligentes AI-Backend zu bieten.
 
-🔖 Nächste Schritte
+## 🔖 Nächste Schritte
 
-Claude kann helfen, die API-Route /api/gpt weiter zu optimieren.
-
-Memory-Integration mit Supabase/Pinecone als nächster Meilenstein.
-
-Erste Live-Tests mit API-Requests und OpenAI-Response-Tuning.
+- Claude kann helfen, die API-Route `/api/gpt` weiter zu optimieren.
+- Memory-Integration mit Supabase/Pinecone als nächster Meilenstein.
+- Erste Live-Tests mit API-Requests und OpenAI-Response-Tuning.
 
 Falls du Anpassungen brauchst oder weitere technische Details möchtest, lass es mich wissen! 🚀
