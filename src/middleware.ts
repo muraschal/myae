@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 
 // Diese Middleware prüft, ob der Benutzer angemeldet ist
 export async function middleware(request: NextRequest) {
@@ -19,14 +19,14 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value;
         },
-        set(name: string, value: string, options: CookieOptions) {
+        set(name: string, value: string, options: any) {
           response.cookies.set({
             name,
             value,
             ...options,
           });
         },
-        remove(name: string, options: CookieOptions) {
+        remove(name: string, options: any) {
           response.cookies.set({
             name,
             value: '',
@@ -43,22 +43,20 @@ export async function middleware(request: NextRequest) {
   // URL des aktuellen Requests
   const url = new URL(request.url);
   const isAuthPage = url.pathname.startsWith('/auth');
-  const isApiRoute = url.pathname.startsWith('/api');
   
-  // Öffentliche Routen, die ohne Anmeldung zugänglich sind
-  const isPublicPage = url.pathname === '/' || url.pathname === '/about';
+  // Prüfe den Login-Status aus den Cookies
+  const isLoggedIn = request.cookies.get('isLoggedIn')?.value === 'true';
 
   // Wenn der Benutzer nicht angemeldet ist und eine geschützte Route aufruft
-  if (!session && !isAuthPage && !isPublicPage && !isApiRoute) {
+  if (!isLoggedIn && !session && url.pathname.startsWith('/dashboard')) {
     const redirectUrl = new URL('/auth/login', request.url);
     redirectUrl.searchParams.set('redirect', url.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Wenn der Benutzer angemeldet ist und eine Auth-Seite aufruft (z.B. login)
-  if (session && isAuthPage) {
-    // Umleitung zur Startseite
-    return NextResponse.redirect(new URL('/', request.url));
+  // Wenn der Benutzer angemeldet ist und eine Auth-Seite aufruft
+  if ((isLoggedIn || session) && isAuthPage) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return response;
@@ -67,7 +65,7 @@ export async function middleware(request: NextRequest) {
 // Die Middleware nur für bestimmte Pfade ausführen
 export const config = {
   matcher: [
-    // Alle Routen außer assets und API-Routes
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/dashboard/:path*',
+    '/auth/:path*'
   ],
 }; 

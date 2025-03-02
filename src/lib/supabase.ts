@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Supabase-Konfigurationsdaten aus den Umgebungsvariablen
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,14 +9,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase URL oder Anon Key fehlt in den Umgebungsvariablen.');
 }
 
-// Supabase-Client erstellen
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Erstellt einen Supabase-Client für die Verwendung im Browser
+export const createClient = () => {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+};
 
 /**
  * Hilfsfunktion zum Überprüfen, ob ein Benutzer eingeloggt ist
  * @returns Das Benutzerobjekt oder null, wenn der Benutzer nicht eingeloggt ist
  */
 export async function getCurrentUser() {
+  const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user || null;
 }
@@ -27,6 +33,7 @@ export async function getCurrentUser() {
  * @param password Passwort des Benutzers
  */
 export async function signInWithEmail(email: string, password: string) {
+  const supabase = createClient();
   return supabase.auth.signInWithPassword({
     email,
     password
@@ -39,6 +46,7 @@ export async function signInWithEmail(email: string, password: string) {
  * @param password Passwort des Benutzers
  */
 export async function signUpWithEmail(email: string, password: string) {
+  const supabase = createClient();
   return supabase.auth.signUp({
     email,
     password
@@ -49,6 +57,7 @@ export async function signUpWithEmail(email: string, password: string) {
  * Melde den aktuellen Benutzer ab
  */
 export async function signOut() {
+  const supabase = createClient();
   return supabase.auth.signOut();
 }
 
@@ -57,5 +66,6 @@ export async function signOut() {
  * @param email E-Mail-Adresse des Benutzers
  */
 export async function resetPassword(email: string) {
+  const supabase = createClient();
   return supabase.auth.resetPasswordForEmail(email);
 } 

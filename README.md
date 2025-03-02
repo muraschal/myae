@@ -1,327 +1,508 @@
 # myÆ - AI Memory System
 
-myÆ is a personalized AI Memory System for daily insights and automation, built with Next.js and OpenAI GPT.
+myÆ ist ein personalisiertes KI-Gedächtnissystem für tägliche Erkenntnisse und Automatisierung, entwickelt mit Next.js und OpenAI GPT.
 
-## 📌 Project Overview
+## 📌 Projektübersicht
 
-myÆ is an AI-powered memory system that uses OpenAI GPT to deliver personalized daily messages and intelligent responses. The architecture is serverless-first, optimized for Vercel, and designed for scalability.
+myÆ ist ein KI-gesteuertes Gedächtnissystem, das OpenAI GPT verwendet, um personalisierte tägliche Nachrichten und intelligente Antworten zu liefern. Die Architektur ist serverless-first, für Vercel optimiert und für Skalierbarkeit konzipiert.
 
-## 🚀 Tech Stack
+## 📑 Inhaltsverzeichnis
 
-- **Framework**: Next.js (App Router) with TypeScript
-  - API endpoints located in `src/app/api/[route]/route.ts`
-  - Direct support for server-side logic and middleware
-  - TypeScript for static typing and better code maintainability
-- **AI Integration**: 
-  - OpenAI GPT-4-Turbo for core functionality
-  - API routes in Next.js for OpenAI requests
-  - Claude (only used for development support in Cursor, not integrated in myÆ)
-- **Memory Layers**:
-  - **Short-term**: Upstash Redis (serverless key-value storage)
-    - Stores temporary contexts like daily mood or recent AI interactions
-    - Data is automatically deleted after a defined period
-  - **Long-term**: Supabase (PostgreSQL)
-    - Stores persistent data like user preferences and long-term memory data
-    - Open-source Firebase alternative with API support
-  - **Semantic**: Pinecone (Vector DB)
-    - Stores previous AI interactions as vectors to preserve context over time
-    - Uses semantic search to retrieve previous relevant answers
-- **Email Service**:
-  - **Resend**: Modern email API for sending AI responses via email
-  - Automatic email delivery of AI-generated content
-  - Customizable templates for email formatting
-- **Deployment**: Vercel
-  - Automatic scaling, no server management
-  - Direct GitHub integration for continuous deployment
-  - Native Next.js support (no manual configuration needed)
+- [Technologie-Stack](#-technologie-stack)
+  - [Core Framework](#core-framework)
+  - [Authentifizierung](#authentifizierung)
+  - [KI-Integration](#ki-integration)
+  - [Gedächtnisschichten](#gedächtnisschichten)
+  - [E-Mail-Service](#e-mail-service)
+  - [Frontend](#frontend)
+  - [Deployment](#deployment)
+- [Architektur](#-architektur)
+  - [Verzeichnisstruktur](#verzeichnisstruktur)
+  - [API-Routen](#api-routen)
+  - [Gedächtnissystem](#gedächtnissystem)
+  - [Authentifizierungssystem](#authentifizierungssystem)
+  - [E-Mail-System](#e-mail-system)
+  - [Umgebungsvariablen](#umgebungsvariablen)
+- [Datenfluss](#-datenfluss)
+  - [KI-Anfrage-Workflow](#ki-anfrage-workflow)
+  - [Authentifizierungs-Workflow](#authentifizierungs-workflow)
+- [Testen](#-testen)
+- [Deployment](#-deployment)
+- [API-Dokumentation](#-api-dokumentation)
+- [Sicherheitsüberlegungen](#-sicherheitsüberlegungen)
+- [Mitwirken](#-mitwirken)
+- [Lizenz](#-lizenz)
+- [Kontakt](#-kontakt)
+
+## 🚀 Technologie-Stack
+
+### Core Framework
+
+- **Next.js 15.2.0 (App Router)** mit TypeScript
+  - Verwendet den modernen App Router für verbesserte Routing-Funktionen
+  - API-Endpunkte in `src/app/api/[route]/route.ts` nach Next.js 13+ Konvention
+  - Server-Komponenten für verbesserte Performance und SEO
+  - Client-Komponenten mit 'use client' Direktive für interaktive UI-Elemente
+  - TypeScript für statische Typisierung und bessere Code-Wartbarkeit
+
+### Authentifizierung
+
+- **Supabase Auth**
+  - Implementiert in `src/lib/supabase.ts`
+  - Verwendet `@supabase/supabase-js` und `@supabase/ssr` für serverseitige Rendering-Unterstützung
+  - Authentifizierungsfluss:
+    1. Benutzer-Login über `signInWithEmail` Funktion
+    2. Session-Management mit Cookies durch Supabase SSR
+    3. Middleware-basierte Routenschutz in `src/middleware.ts`
+    4. Echtzeit-Authentifizierungsstatus mit `onAuthStateChange` Event-Listener
+  - Unterstützt Email/Passwort-Authentifizierung und Passwort-Reset
+
+### KI-Integration
+
+- **OpenAI GPT-4o**
+  - Implementiert in `src/app/api/gpt/route.ts`
+  - Verwendet die offizielle OpenAI Node.js SDK (v4.86.1)
+  - Konfigurierbare Parameter:
+    - `temperature`: Steuert die Zufälligkeit der Antworten (0.0-1.0)
+    - `max_tokens`: Maximale Antwortlänge
+    - `context`: Optionaler Systemkontext für die Anfrage
+  - Fehlerbehandlung mit detaillierten Fehlercodes und Nachrichten
+  - Token-Nutzungsverfolgung für Verbrauchsüberwachung
+
+### Gedächtnisschichten
+
+#### Kurzzeit-Gedächtnis
+
+- **Upstash Redis** (Serverless Key-Value Storage)
+  - Implementiert in `src/lib/redis.ts` und `src/lib/memory.ts`
+  - Verwendet `@upstash/redis` SDK für REST-API-Zugriff
+  - Speichert temporäre Kontexte wie:
+    - Tagesstimmung (`memory:mood:*`)
+    - Kürzliche KI-Interaktionen (`memory:interaction:*`)
+    - Notizen (`memory:note:*`)
+    - Benutzereinstellungen (`memory:preference:*`)
+  - Time-to-Live (TTL) Mechanismus:
+    - Interaktionen: 24 Stunden (86400 Sekunden)
+    - Stimmungen: 7 Tage (604800 Sekunden)
+    - Anpassbare TTL für andere Gedächtnistypen
+  - Schlüsselstruktur: `memory:[type]:[timestamp]-[random]`
+
+#### Langzeit-Gedächtnis
+
+- **Supabase PostgreSQL**
+  - Implementiert in `src/lib/supabase.ts`
+  - Verwendet für:
+    - Benutzerprofile und -einstellungen
+    - Persistente Gedächtnisdaten
+    - Authentifizierungsdaten
+  - Tabellenschema:
+    - `users`: Erweiterte Benutzerprofile
+    - `memories`: Langzeit-Gedächtnisdaten mit Benutzer-Referenz
+    - `preferences`: Benutzerspezifische Einstellungen
+
+### E-Mail-Service
+
+- **Resend**
+  - Implementiert in `src/lib/email.ts`
+  - Verwendet die offizielle Resend SDK (v4.1.2)
+  - Funktionen:
+    - `sendResponseEmail`: Sendet KI-Antworten per E-Mail
+    - HTML-Formatierung mit responsivem Design
+    - Fehlerbehandlung und Logging
+  - Standardempfänger konfigurierbar
+  - Absender: `MyAE <noreply@myae.rapold.io>`
+
+### Frontend
+
+- **React 19.0.0**
+  - Client-Komponenten in `src/components/`
+  - Authentifizierungskomponenten:
+    - `LoginForm.tsx`: Benutzeranmeldung mit Statusanzeige
+    - `Header.tsx`: Dynamische Navigation basierend auf Authentifizierungsstatus
+  - Verwendet Next.js App Router für Routing
+  - Echtzeit-Authentifizierungsstatus-Updates mit Supabase Auth Listener
+
+- **TailwindCSS 4**
+  - Utility-First CSS-Framework
+  - Responsive Design für alle Komponenten
+  - Dark Mode Unterstützung mit `dark:` Präfix-Klassen
+
+### Deployment
+
+- **Vercel**
+  - Automatische Skalierung, kein Server-Management
+  - Direkte GitHub-Integration für kontinuierliche Bereitstellung
+  - Native Next.js-Unterstützung (keine manuelle Konfiguration erforderlich)
+  - Umgebungsvariablen in Vercel Dashboard konfiguriert
+
 - **DNS & CDN**: Cloudflare
+  - Domain: myae.rapold.io
+  - SSL/TLS-Verschlüsselung
+  - Edge-Caching für verbesserte Performance
 
-## 🏗️ Architecture
+## 🏗️ Architektur
 
-The system is built with a serverless-first approach:
+Das System ist mit einem Serverless-First-Ansatz aufgebaut:
 
-### API Routes
+### Verzeichnisstruktur
 
-- **Next.js API routes for OpenAI integration**
-  - `/api/gpt` – Communicates with OpenAI GPT and sends responses via email
-  - `/api/email-test` – Test endpoint for email functionality
-  - Uses `fetch` for OpenAI API calls
-  - Returns JSON responses with `NextResponse.json()`
-
-#### Example API Usage
-
-**POST Request to `/api/gpt`:**
-
-```json
-{
-  "prompt": "How does Bitcoin work?"
-}
+```
+myae/
+├── public/                  # Statische Assets
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── api/             # API-Routen
+│   │   │   ├── gpt/         # OpenAI GPT-Integration
+│   │   │   ├── memory/      # Gedächtnis-API
+│   │   │   ├── email-test/  # E-Mail-Test-Endpunkt
+│   │   │   └── redis-test/  # Redis-Test-Endpunkt
+│   │   ├── auth/            # Authentifizierungsseiten
+│   │   └── page.tsx         # Startseite
+│   ├── components/          # React-Komponenten
+│   │   ├── auth/            # Authentifizierungskomponenten
+│   │   └── navigation/      # Navigationskomponenten
+│   ├── lib/                 # Bibliotheken und Dienstleistungen
+│   │   ├── supabase.ts      # Supabase-Client und Authentifizierung
+│   │   ├── redis.ts         # Redis-Client
+│   │   ├── email.ts         # E-Mail-Service
+│   │   ├── memory.ts        # Gedächtnis-Manager
+│   │   └── memory-factory.ts # Gedächtnis-Factory
+│   └── middleware.ts        # Next.js Middleware für Authentifizierung
+├── .env.local               # Lokale Umgebungsvariablen
+├── next.config.js           # Next.js-Konfiguration
+├── package.json             # Projektabhängigkeiten
+└── tsconfig.json            # TypeScript-Konfiguration
 ```
 
-**Response:**
+### API-Routen
 
-```json
-{
-  "result": "Bitcoin is a decentralized digital currency system...",
-  "tokens": {
-    "prompt": 10,
-    "completion": 150,
-    "total": 160
-  },
-  "id": "chat-xyz123"
-}
-```
+#### OpenAI GPT-Integration
 
-### Memory System
-
-- **Three-tiered memory system**:
-  - Short-term (Redis): For temporary context and recent interactions
-  - Long-term (PostgreSQL): For persistent user data and preferences
-  - Semantic (Vector DB): For context-aware retrieval of past interactions
-
-### Email System
-
-- **Automatic email delivery of AI responses**:
-  - Every GPT response is automatically emailed to a predefined address
-  - Uses Resend API for reliable email delivery
-  - Formatted HTML emails with clear prompt and response sections
-  - Test endpoint available at `/api/email-test`
-
-### Environment Variables
-
-- **Stored in Vercel → Environment Variables**
-  - `OPENAI_API_KEY` → API key for OpenAI
-  - `RESEND_API_KEY` → API key for Resend email service
-  - `APP_ENV` → "production" or "development"
-  - `UPSTASH_REDIS_REST_URL` → URL for Upstash Redis
-  - `UPSTASH_REDIS_REST_TOKEN` → Token for Upstash Redis
-
-### Extensibility
-
-- **Email Service**: Resend API for AI response emails
-  - Generates personalized content from OpenAI API
-  - Content based on stored preferences from memory layer
-- **Telegram Integration** (future): 
-  - Possibility to connect a Telegram bot that uses myÆ's AI functionality
-  - API routes could receive requests via Telegram and generate responses
-- **Web Frontend** (optional):
-  - Dashboard in Next.js for managing memory data and personalizing AI responses
-
-## 📡 API Documentation
-
-myÆ provides several API endpoints for interacting with the AI memory system:
-
-### `/api/gpt` - Main GPT Interaction
-
-**Method:** POST
-
-**Description:** Send prompts to OpenAI GPT, receive AI-generated responses, and automatically email the response.
-
-**Request Body:**
-```json
-{
-  "prompt": "string",           // Required: The prompt to send to GPT
-  "context": "string",          // Optional: Additional context for the prompt
-  "temperature": number,        // Optional: Controls randomness (0.0-1.0, default: 0.7)
-  "max_tokens": number,         // Optional: Maximum response length (default: 500)
-  "stream": boolean             // Optional: Enable streaming response (default: false)
-}
-```
-
-**Response:**
-```json
-{
-  "result": "string",           // The AI-generated response
-  "tokens": {                   // Token usage information
-    "prompt": number,
-    "completion": number,
-    "total": number
-  },
-  "id": "string"                // Unique identifier for this interaction
-}
-```
-
-**Side Effects:**
-- Automatically sends an email containing the prompt and response to the configured recipient
-
-**Error Response:**
-```json
-{
-  "error": "string",            // Error message
-  "code": "string"              // Error code
-}
-```
-
-### `/api/email-test` - Test Email Functionality
-
-**Method:** GET
-
-**Description:** Send a test email to verify the email service is working properly.
-
-**Response:**
-```json
-{
-  "success": boolean,
-  "message": "string",
-  "result": {
-    "success": boolean,
-    "data": {}                  // Response data from the email service
-  }
-}
-```
-
-### `/api/memory/store` - Store Memory
-
-**Method:** POST
-
-**Description:** Store information in the memory system.
-
-**Request Body:**
-```json
-{
-  "content": "string",          // Required: Content to store
-  "type": "string",             // Required: Type of memory (e.g., "note", "preference")
-  "tags": ["string"],           // Optional: Tags for categorization
-  "ttl": number                 // Optional: Time-to-live in seconds (for short-term memory)
-}
-```
-
-**Response:**
-```json
-{
-  "id": "string",               // Unique identifier for the stored memory
-  "success": boolean
-}
-```
-
-### `/api/memory/retrieve` - Retrieve Memory
-
-**Method:** POST
-
-**Description:** Retrieve information from the memory system.
-
-**Request Body:**
-```json
-{
-  "query": "string",            // Required: Search query
-  "type": "string",             // Optional: Filter by memory type
-  "tags": ["string"],           // Optional: Filter by tags
-  "limit": number               // Optional: Maximum number of results (default: 10)
-}
-```
-
-**Response:**
-```json
-{
-  "results": [
+- **`/api/gpt`** – Kommuniziert mit OpenAI GPT und sendet Antworten per E-Mail
+  - **Implementierung**: `src/app/api/gpt/route.ts`
+  - **Methode**: POST
+  - **Request-Body**:
+    ```typescript
     {
-      "id": "string",
-      "content": "string",
-      "type": "string",
-      "tags": ["string"],
-      "created_at": "string",
-      "relevance_score": number
+      prompt: string;           // Erforderlich: Die Anfrage an GPT
+      context?: string;         // Optional: Zusätzlicher Kontext für die Anfrage
+      temperature?: number;     // Optional: Steuert die Zufälligkeit (0.0-1.0, Standard: 0.7)
+      max_tokens?: number;      // Optional: Maximale Antwortlänge (Standard: 500)
     }
-  ],
-  "count": number
-}
+    ```
+  - **Response**:
+    ```typescript
+    {
+      result: string;           // Die KI-generierte Antwort
+      tokens: {                 // Token-Nutzungsinformationen
+        prompt: number;
+        completion: number;
+        total: number;
+      };
+      id: string;               // Eindeutige Kennung für diese Interaktion
+    }
+    ```
+  - **Fehlerbehandlung**:
+    - Detaillierte Fehlertypisierung für OpenAI-Fehler
+    - HTTP-Statuscodes entsprechend dem Fehlertyp
+    - Strukturierte Fehlerantworten mit Code und Nachricht
+
+#### Gedächtnis-System
+
+- **`/api/memory/store`** – Speichert Informationen im Gedächtnissystem
+  - **Implementierung**: `src/app/api/memory/store/route.ts`
+  - **Methode**: POST
+  - **Request-Body**:
+    ```typescript
+    {
+      content: string;          // Erforderlich: Zu speichernder Inhalt
+      type: 'interaction' | 'mood' | 'preference' | 'note'; // Erforderlich: Gedächtnistyp
+      userId?: string;          // Optional: Benutzer-ID
+      metadata?: Record<string, any>; // Optional: Zusätzliche Metadaten
+      ttl?: number;             // Optional: Time-to-Live in Sekunden
+    }
+    ```
+  - **Response**:
+    ```typescript
+    {
+      id: string;               // Eindeutige Kennung für das gespeicherte Gedächtnis
+      success: boolean;
+      memory: Memory;           // Das vollständige Gedächtnisobjekt
+    }
+    ```
+
+- **`/api/memory/retrieve`** – Ruft Informationen aus dem Gedächtnissystem ab
+  - **Implementierung**: `src/app/api/memory/retrieve/route.ts`
+  - **Methode**: POST
+  - **Request-Body**:
+    ```typescript
+    {
+      type: 'interaction' | 'mood' | 'preference' | 'note'; // Erforderlich: Gedächtnistyp
+      limit?: number;           // Optional: Maximale Anzahl der Ergebnisse (Standard: 10)
+    }
+    ```
+  - **Response**:
+    ```typescript
+    {
+      memories: Memory[];       // Array von Gedächtnisobjekten
+      count: number;            // Anzahl der zurückgegebenen Gedächtnisse
+    }
+    ```
+
+### Gedächtnissystem
+
+Das Gedächtnissystem verwendet einen mehrschichtigen Ansatz:
+
+#### MemoryManager (src/lib/memory.ts)
+
+- **Hauptklasse**: `MemoryManager`
+  - **Methoden**:
+    - `storeMemory`: Speichert ein neues Gedächtnis in Redis
+    - `getMemory`: Ruft ein Gedächtnis anhand seiner ID ab
+    - `getRecentMemories`: Ruft die neuesten Gedächtnisse eines bestimmten Typs ab
+    - `deleteMemory`: Löscht ein Gedächtnis anhand seiner ID
+    - `storeInteraction`: Speichert eine Interaktion mit der KI
+    - `getRecentInteractions`: Ruft die letzten Interaktionen ab
+    - `storeMood`: Speichert eine Tagesstimmung
+    - `getRecentMoods`: Ruft die letzten Stimmungen ab
+
+- **Gedächtnistypen**:
+  - `interaction`: KI-Interaktionen (TTL: 24 Stunden)
+  - `mood`: Tagesstimmungen (TTL: 7 Tage)
+  - `preference`: Benutzereinstellungen (kein Standard-TTL)
+  - `note`: Benutzernotizen (kein Standard-TTL)
+
+#### MemoryFactory (src/lib/memory-factory.ts)
+
+- **Zweck**: Abstraktionsschicht für verschiedene Speicherimplementierungen
+- **Methoden**:
+  - `storeMemory`: Speichert ein Gedächtnis im entsprechenden Speicher
+  - `getMemory`: Ruft ein Gedächtnis aus dem entsprechenden Speicher ab
+  - `getRecentMemories`: Ruft die neuesten Gedächtnisse ab
+  - `deleteMemory`: Löscht ein Gedächtnis
+
+### Authentifizierungssystem
+
+#### Supabase Auth (src/lib/supabase.ts)
+
+- **Hauptfunktionen**:
+  - `getCurrentUser`: Prüft, ob ein Benutzer eingeloggt ist
+  - `signInWithEmail`: Meldet einen Benutzer mit E-Mail und Passwort an
+  - `signUpWithEmail`: Registriert einen neuen Benutzer
+  - `signOut`: Meldet den aktuellen Benutzer ab
+  - `resetPassword`: Fordert einen Passwort-Reset an
+
+#### Middleware (src/middleware.ts)
+
+- **Zweck**: Routenschutz und Authentifizierungsprüfung
+- **Funktionalität**:
+  - Prüft den Authentifizierungsstatus für jede Anfrage
+  - Leitet nicht authentifizierte Benutzer zur Login-Seite um
+  - Leitet authentifizierte Benutzer von Auth-Seiten weg
+  - Speichert die ursprüngliche URL für Weiterleitung nach der Anmeldung
+  - Fehlerbehandlung mit Auth-Fehler-Cookies
+
+### E-Mail-System
+
+#### Resend Integration (src/lib/email.ts)
+
+- **Hauptfunktion**: `sendResponseEmail`
+  - **Parameter**:
+    - `prompt`: Die Anfrage des Benutzers
+    - `result`: Die Antwort des KI-Assistenten
+    - `recipient`: (optional) E-Mail-Empfänger
+  - **Rückgabe**:
+    ```typescript
+    {
+      success: boolean;
+      data?: any;               // Antwortdaten bei Erfolg
+      error?: string;           // Fehlermeldung bei Misserfolg
+    }
+    ```
+  - **E-Mail-Format**:
+    - Betreff: "KI-Antwort: [gekürzte Anfrage]"
+    - HTML-Formatierung mit separaten Abschnitten für Anfrage und Antwort
+    - Responsives Design für verschiedene E-Mail-Clients
+
+### Umgebungsvariablen
+
+Die Anwendung verwendet folgende Umgebungsvariablen:
+
+```
+# OpenAI API
+OPENAI_API_KEY=sk_...
+
+# Umgebung
+APP_ENV=development|production
+
+# Upstash Redis (Kurzzeit-Gedächtnis)
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=AZ...
+
+# Resend (E-Mail-Service)
+RESEND_API_KEY=re_...
+
+# Supabase (Auth & Datenbank)
+NEXT_PUBLIC_SUPABASE_URL=https://...
+NEXT_PUBLIC_SUPABASE_ANON_TOKEN=eyJ...
 ```
 
-### `/api/email/subscribe` - Email Subscription
+## 🔄 Datenfluss
 
-**Method:** POST
+### KI-Anfrage-Workflow
 
-**Description:** Subscribe to daily AI-generated emails.
+1. **Benutzer sendet eine Anfrage**
+   - Frontend sendet POST-Anfrage an `/api/gpt`
+   - Request enthält `prompt` und optionale Parameter
 
-**Request Body:**
-```json
-{
-  "email": "string",            // Required: Email address
-  "preferences": {              // Optional: Content preferences
-    "topics": ["string"],
-    "frequency": "string",      // "daily", "weekly", etc.
-    "time": "string"            // Preferred delivery time
-  }
-}
+2. **API-Route verarbeitet die Anfrage**
+   - Validiert die Eingabeparameter
+   - Bereitet die Nachrichten für OpenAI vor
+   - Fügt Systemkontext hinzu (Standard oder benutzerdefiniert)
+
+3. **OpenAI API-Aufruf**
+   - Sendet die Anfrage an OpenAI GPT-4o
+   - Wartet auf die Antwort
+   - Erfasst Token-Nutzungsdaten
+
+4. **Speichern der Interaktion**
+   - Speichert die Anfrage und Antwort im Kurzzeit-Gedächtnis
+   - Verwendet Redis mit 24-Stunden-TTL
+
+5. **E-Mail-Versand**
+   - Formatiert die Antwort als HTML-E-Mail
+   - Sendet die E-Mail über Resend API
+   - Protokolliert den Versandstatus
+
+6. **Antwort an den Benutzer**
+   - Sendet die KI-Antwort, Token-Nutzung und Interaktions-ID zurück
+   - Bei Fehlern: Sendet strukturierte Fehlerinformationen
+
+### Authentifizierungs-Workflow
+
+1. **Benutzer öffnet die Anwendung**
+   - Middleware prüft den Authentifizierungsstatus
+   - Leitet bei Bedarf zur Login-Seite um
+
+2. **Benutzer meldet sich an**
+   - Sendet E-Mail und Passwort an Supabase Auth
+   - Bei Erfolg: Setzt Cookies für die Sitzung
+   - Bei Fehler: Zeigt Fehlermeldung an
+
+3. **Nach der Anmeldung**
+   - Header-Komponente aktualisiert die Navigation
+   - Middleware leitet zur ursprünglichen URL oder Startseite um
+
+4. **Sitzungsverwaltung**
+   - Supabase Auth verwaltet die Sitzung über Cookies
+   - Header-Komponente überwacht Authentifizierungsänderungen in Echtzeit
+
+## 🧪 Testen
+
+### API-Endpunkte testen
+
+#### GPT-Endpunkt testen
+
+```bash
+curl -X POST http://localhost:3000/api/gpt \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Wie funktioniert Bitcoin?"}'
 ```
 
-**Response:**
-```json
-{
-  "success": boolean,
-  "message": "string"
-}
+#### Gedächtnis-Speicher testen
+
+```bash
+curl -X POST http://localhost:3000/api/memory/store \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Dies ist ein Test","type":"note"}'
 ```
 
-### Authentication
+#### E-Mail-Test
 
-All API endpoints (except public ones) require authentication using an API key:
-
-```
-Authorization: Bearer YOUR_API_KEY
+```bash
+curl -X GET http://localhost:3000/api/email-test
 ```
 
-API keys can be generated in the user dashboard or through the `/api/auth/key` endpoint.
+## 🚀 Deployment
 
-## 🛠️ Getting Started
+### Vercel Deployment
 
-1. Clone the repository
-2. Install dependencies:
+1. **GitHub-Repository verbinden**
+   - Verbinde dein GitHub-Repository mit Vercel
+   - Wähle das Next.js-Framework
+
+2. **Umgebungsvariablen konfigurieren**
+   - Füge alle erforderlichen Umgebungsvariablen hinzu
+   - Markiere sensible Variablen als verschlüsselt
+
+3. **Deployment starten**
+   - Vercel baut und deployt die Anwendung automatisch
+   - Jeder Push auf den Hauptzweig löst ein neues Deployment aus
+
+### Lokale Entwicklung
+
+1. **Repository klonen**
+   ```bash
+   git clone https://github.com/yourusername/myae.git
+   cd myae
+   ```
+
+2. **Abhängigkeiten installieren**
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env.local` and fill in your API keys:
-   - `OPENAI_API_KEY` - Your OpenAI API key
-   - `RESEND_API_KEY` - Your Resend API key for email functionality
-   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (if using memory features)
-4. Run the development server:
+
+3. **Umgebungsvariablen konfigurieren**
+   - Erstelle eine `.env.local`-Datei mit allen erforderlichen Variablen
+
+4. **Entwicklungsserver starten**
    ```bash
    npm run dev
    ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-6. Test the email functionality by visiting [http://localhost:3000/api/email-test](http://localhost:3000/api/email-test)
 
-## 📦 Dependencies
+5. **Anwendung öffnen**
+   - Öffne [http://localhost:3000](http://localhost:3000) im Browser
 
-- `@upstash/redis`: For short-term memory storage
-- `@supabase/supabase-js`: For long-term memory storage
-- `@pinecone-database/pinecone`: For semantic memory storage
-- `openai`: OpenAI API client for AI integration
-- `resend`: Modern email API for sending AI responses
-- `eventsource-parser`: For streaming OpenAI responses
+## 📚 API-Dokumentation
 
-## 🚢 Deployment & DevOps
+Siehe [API-Dokumentation](#-api-documentation) im Hauptteil der README für detaillierte API-Endpunktbeschreibungen.
 
-### GitHub → Vercel Deployment Pipeline
+## 🔒 Sicherheitsüberlegungen
 
-- Code stored in a private GitHub repository
-- Vercel detects commits & automatically builds new versions
-- Branch protection for main to prevent unwanted changes
+### Authentifizierung
 
-### CI/CD Automation
+- Verwendet Supabase Auth für sichere Benutzerauthentifizierung
+- Passwörter werden niemals im Klartext gespeichert
+- Sitzungen werden über sichere Cookies verwaltet
 
-- GitHub Actions (future possibility) for tests & QA before deployments
-- Logging & monitoring via Vercel Logs
+### API-Schlüssel
 
-## 💡 Use Cases
+- Alle API-Schlüssel werden als Umgebungsvariablen gespeichert
+- OpenAI und andere sensible Schlüssel sind nur serverseitig verfügbar
+- Supabase anon-Schlüssel ist der einzige clientseitig verfügbare Schlüssel
 
-- **Daily Personalized Messages**: Receive AI-generated insights based on your preferences and past interactions
-- **Memory-Enhanced Responses**: AI responses that remember your previous conversations and preferences
-- **Multi-Channel Access**: Access your AI memory system via email, Telegram (future), or web interface
+### Datenschutz
 
-## 🔖 Next Steps
+- Benutzerinformationen werden sicher in Supabase gespeichert
+- Kurzzeit-Gedächtnis in Redis hat automatische Ablaufzeiten
+- E-Mails werden nur an verifizierte Empfänger gesendet
 
-- Optimize the API route `/api/gpt` further
-- Memory integration with Supabase/Pinecone as the next milestone
-- First live tests with API requests and OpenAI response tuning
-- Implement email notification system
-- Develop Telegram bot integration
+## 🤝 Mitwirken
 
-## 📄 License
+Beiträge sind willkommen! Bitte folge diesen Schritten:
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+1. Forke das Repository
+2. Erstelle einen Feature-Branch (`git checkout -b feature/amazing-feature`)
+3. Committe deine Änderungen (`git commit -m 'Add amazing feature'`)
+4. Pushe zum Branch (`git push origin feature/amazing-feature`)
+5. Öffne einen Pull Request
 
-## 🔄 Status
+## 📄 Lizenz
 
-Current status: API and frontend implemented. Vercel deployment active and ready for testing.
-Last updated: März 2024
+Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE) Datei für Details.
+
+## 📞 Kontakt
+
+Marcel Rapold - [@marcelrapold](https://twitter.com/marcelrapold) - marcel@marcelrapold.com
+
+Projekt-Link: [https://github.com/muraschal/myae](https://github.com/muraschal/myae)

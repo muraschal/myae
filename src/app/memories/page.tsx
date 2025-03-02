@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function Home() {
+export default function MemoriesPage() {
   const router = useRouter();
   
   useEffect(() => {
@@ -11,4 +11,4 @@ export default function Home() {
   }, [router]);
   
   return null;
-}
+} 
