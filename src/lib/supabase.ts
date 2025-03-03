@@ -3,6 +3,7 @@ import { createBrowserClient } from '@supabase/ssr';
 // Supabase-Konfigurationsdaten aus den Umgebungsvariablen
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://myae.rapold.io';
 
 // Prüfen, ob die erforderlichen Umgebungsvariablen vorhanden sind
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -13,7 +14,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const createClient = () => {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        flowType: 'pkce',
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: true
+      },
+      global: {
+        headers: {
+          'x-my-custom-header': siteUrl
+        }
+      }
+    }
   );
 };
 
