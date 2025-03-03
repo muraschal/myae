@@ -2,5 +2,52 @@
   "crons": [{
     "path": "/api/cron/daily-email",
     "schedule": "0 8 * * *"
-  }]
+  }],
+  "functions": {
+    "api/send-daily-email/*.ts": {
+      "maxDuration": 60
+    },
+    "api/email-test/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/icon/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/c.1password.com/:path*",
+      "destination": "/c.1password.com/:path*"
+    },
+    {
+      "source": "https://c.1password.com/richicons/images/login/120/:file",
+      "destination": "/c.1password.com/richicons/images/login/120/:file"
+    }
+  ]
 } 
