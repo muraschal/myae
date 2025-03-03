@@ -1,6 +1,16 @@
-# myÆ - AI Memory System
+# myÆ - Dein KI-gesteuerter Tagesbegleiter 🌟
 
-myÆ ist ein personalisiertes KI-Gedächtnissystem für tägliche Erkenntnisse und Automatisierung, entwickelt mit Next.js und OpenAI GPT.
+> "Jeden Tag eine neue Perspektive, jeden Morgen eine inspirierende Nachricht."
+
+myÆ ist mehr als nur ein E-Mail-System - es ist dein persönlicher KI-Begleiter, der dich jeden Morgen mit einer sorgfältig kuratierten, personalisierten Nachricht inspiriert. Durch die Kombination von modernster KI-Technologie (GPT-4), historischen Fakten und DALL-E generierten Bildern erschafft myÆ ein einzigartiges, täglich wechselndes Erlebnis.
+
+## ✨ Highlights
+
+- **Personalisierte KI-Nachrichten**: Tägliche E-Mails, die auf deine Interessen und deinen Fokus abgestimmt sind
+- **Historische Fakten**: Jeden Tag ein relevanter historischer Fakt, der dich zum Nachdenken anregt
+- **KI-generierte Bilder**: Einzigartige, thematisch passende Bilder durch DALL-E
+- **Schweizer Präzision**: Pünktlich um 8:00 Uhr in deinem Posteingang
+- **Minimalistisches Design**: Klare, lesbare Struktur mit modernem Swiss Design
 
 ## 📌 Projektübersicht
 
@@ -304,25 +314,32 @@ Das Gedächtnissystem verwendet einen mehrschichtigen Ansatz:
 
 ### E-Mail-System
 
-#### Resend Integration (src/lib/email.ts)
+#### Tägliche E-Mails
 
-- **Hauptfunktion**: `sendResponseEmail`
-  - **Parameter**:
-    - `prompt`: Die Anfrage des Benutzers
-    - `result`: Die Antwort des KI-Assistenten
-    - `recipient`: (optional) E-Mail-Empfänger
-  - **Rückgabe**:
-    ```typescript
-    {
-      success: boolean;
-      data?: any;               // Antwortdaten bei Erfolg
-      error?: string;           // Fehlermeldung bei Misserfolg
-    }
-    ```
-  - **E-Mail-Format**:
-    - Betreff: "KI-Antwort: [gekürzte Anfrage]"
-    - HTML-Formatierung mit separaten Abschnitten für Anfrage und Antwort
-    - Responsives Design für verschiedene E-Mail-Clients
+- **Automatischer Versand**: Jeden Morgen um 8:00 Uhr (Schweizer Zeit)
+- **Personalisierte Inhalte**:
+  - Einleitung basierend auf Benutzerinteressen
+  - Tagesrelevante historische Fakten
+  - Konkrete Handlungsschritte für den Tag
+- **Visuelles Element**: DALL-E generierte Bilder im Swiss Design Stil
+- **BCC-Kopie**: Automatische BCC an System-Administrator für Qualitätssicherung
+
+#### E-Mail-Struktur
+
+```typescript
+interface EmailContent {
+  subject: string;
+  preheader: string;
+  greeting: string;
+  mainContent: {
+    intro: string;
+    historyFact: string;
+    actionSteps: string;
+  };
+  callToAction: string;
+  imageUrl: string;
+}
+```
 
 ### Umgebungsvariablen
 
@@ -506,3 +523,50 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE
 Marcel Rapold - [@marcelrapold](https://twitter.com/marcelrapold) - marcel@marcelrapold.com
 
 Projekt-Link: [https://github.com/muraschal/myae](https://github.com/muraschal/myae)
+
+## 🚀 Schnellstart
+
+1. **Projekt klonen**
+   ```bash
+   git clone https://github.com/yourusername/myae.git
+   cd myae
+   ```
+
+2. **Abhängigkeiten installieren**
+   ```bash
+   npm install
+   ```
+
+3. **Umgebungsvariablen einrichten**
+   ```bash
+   cp .env.example .env.local
+   # Fülle die erforderlichen Umgebungsvariablen aus
+   ```
+
+4. **Entwicklungsserver starten**
+   ```bash
+   npm run dev
+   ```
+
+5. **Testen**
+   - Öffne http://localhost:3000
+   - Registriere einen Benutzer
+   - Teste die E-Mail-Funktionalität über das Dashboard
+
+## 🔐 Erforderliche Umgebungsvariablen
+
+```env
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Redis (Upstash)
+REDIS_URL=https://...
+REDIS_TOKEN=...
+
+# E-Mail (Resend)
+RESEND_API_KEY=re_...
+ADMIN_EMAIL=your@email.com
+
+# Cron Job
+CRON_SECRET=your-secret-here
+```

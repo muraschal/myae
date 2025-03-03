@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmail } from '@/lib/supabase';
 import Cookies from 'js-cookie';
 
-export default function LoginForm() {
+function LoginFormContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -123,13 +123,18 @@ export default function LoginForm() {
             {loading ? 'Anmeldung läuft...' : 'ANMELDEN'}
           </button>
         </form>
+
+        <div className="forgot-password">
+          <Link href="/auth/reset-password" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+            Passwort vergessen?
+          </Link>
+        </div>
       </div>
       
       <div className="welcome-panel">
-        <h1 className="welcome-title">myÆ 
-        </h1>
+        <h1 className="welcome-title">myÆ</h1>
         <p className="welcome-subtitle">
-        Dein persönliches Erinnerungssystem
+          Dein persönliches Erinnerungssystem
         </p>
         <Link href="/auth/register">
           <button className="auth-button">
@@ -138,5 +143,32 @@ export default function LoginForm() {
         </Link>
       </div>
     </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="glass-card">
+      <div className="login-panel flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400 mb-4"></div>
+          <p className="text-gray-400">Lade...</p>
+        </div>
+      </div>
+      <div className="welcome-panel opacity-50">
+        <h1 className="welcome-title">myÆ</h1>
+        <p className="welcome-subtitle">
+          Dein persönliches Erinnerungssystem
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginForm() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <LoginFormContent />
+    </Suspense>
   );
 } 
