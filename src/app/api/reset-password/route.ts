@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // Initialisiere Resend mit dem API-Schlüssel
 const resend = new Resend(process.env.RESEND_API_KEY || 're_Uwe4fws5_4pMYmkfhwtuCaXEWzttCSjSJ');
+
+// Erstelle einen Supabase-Server-Client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,9 +24,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Starte Passwort-Zurücksetzung für:', email);
-
-    // Erstelle einen Supabase-Client
-    const supabase = createClient();
 
     // Generiere einen Passwort-Reset-Token mit Supabase
     const { data: resetData, error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
