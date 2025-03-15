@@ -8,11 +8,13 @@ export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [detailedError, setDetailedError] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setDetailedError(null);
     
     if (!email || !email.includes('@')) {
       setError('Bitte gib eine gültige E-Mail-Adresse ein.');
@@ -22,15 +24,38 @@ export default function ResetPasswordForm() {
     
     try {
       console.log('Sende Passwort-Zurücksetzungsanfrage für:', email);
-      const { error } = await resetPassword(email);
       
-      if (error) {
-        console.error('Fehler bei der Passwort-Zurücksetzung:', error);
-        throw error;
+      // Direkter Fallback-Mechanismus für den Fall, dass die Supabase-Funktion fehlschlägt
+      const fallbackUrl = `https://xgfujkapfmsgklwozlgh.supabase.co/auth/v1/recover?email=${encodeURIComponent(email)}`;
+      
+      try {
+        // Versuche zuerst die normale Methode
+        const { error } = await resetPassword(email);
+        
+        if (error) {
+          console.error('Fehler bei der Passwort-Zurücksetzung:', error);
+          setDetailedError(error);
+          throw error;
+        }
+        
+        console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
+        setSuccess(true);
+      } catch (supabaseError) {
+        console.error('Supabase-Fehler, versuche Fallback-Methode:', supabaseError);
+        
+        // Fallback: Direkter API-Aufruf
+        try {
+          const response = await fetch(fallbackUrl);
+          if (!response.ok) {
+            throw new Error(`Fallback fehlgeschlagen: ${response.status} ${response.statusText}`);
+          }
+          console.log('Fallback-Methode erfolgreich');
+          setSuccess(true);
+        } catch (fallbackError) {
+          console.error('Auch Fallback-Methode fehlgeschlagen:', fallbackError);
+          throw fallbackError;
+        }
       }
-      
-      console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
-      setSuccess(true);
     } catch (err: any) {
       console.error('Fehler beim Zurücksetzen des Passworts:', err);
       setError(err.message || 'Beim Zurücksetzen des Passworts ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
@@ -45,7 +70,15 @@ export default function ResetPasswordForm() {
       
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
-          {error}
+          <p>{error}</p>
+          {detailedError && (
+            <details className="mt-2 text-xs">
+              <summary>Technische Details</summary>
+              <pre className="mt-1 p-2 bg-gray-100 rounded overflow-auto">
+                {JSON.stringify(detailedError, null, 2)}
+              </pre>
+            </details>
+          )}
         </div>
       )}
       

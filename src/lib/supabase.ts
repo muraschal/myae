@@ -82,14 +82,28 @@ export async function signOut() {
 export async function resetPassword(email: string) {
   try {
     console.log('Starte Passwort-Zurücksetzung für:', email);
-    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('Site URL:', siteUrl);
     
-    const supabase = createClient();
+    // Erstelle einen neuen Supabase-Client für diese spezifische Anfrage
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'pkce',
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          persistSession: true
+        }
+      }
+    );
+    
+    // Absolute URL für die Weiterleitung
+    const redirectUrl = `${window.location.origin}/auth/login?reset=true`;
+    console.log('Weiterleitungs-URL:', redirectUrl);
     
     // Konfiguriere die Passwort-Zurücksetzung mit expliziter Weiterleitungs-URL
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/login?reset=true`,
+      redirectTo: redirectUrl,
     });
     
     if (error) {
