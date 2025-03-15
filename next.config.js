@@ -1,15 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': './src',
-    };
-    return config;
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  // Die Pfad-Aliase werden jetzt vollständig von TypeScript verwaltet
 };
 
 module.exports = nextConfig;
