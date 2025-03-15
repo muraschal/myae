@@ -1,6 +1,22 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
-  // Die Pfad-Aliase werden jetzt vollständig von TypeScript verwaltet
+  webpack: (config) => {
+    // Verbessere die Modul-Auflösung
+    config.resolve = {
+      ...config.resolve,
+      alias: {
+        ...config.resolve.alias,
+        '@': path.resolve(__dirname, './src'),
+      },
+      modules: [
+        path.resolve(__dirname, './src'),
+        'node_modules'
+      ]
+    };
+    return config;
+  }
 };
 
 module.exports = nextConfig;
