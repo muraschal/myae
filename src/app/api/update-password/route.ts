@@ -32,19 +32,29 @@ export async function POST(request: NextRequest) {
     );
 
     try {
-      // Versuche das Passwort mit dem Token zu aktualisieren
+      // Versuche zuerst den Token zu verifizieren
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token,
+        type: 'recovery'
+      });
+
+      if (verifyError) {
+        console.error('Fehler bei der Token-Verifizierung:', verifyError);
+        return NextResponse.json(
+          { error: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.' },
+          { status: 400 }
+        );
+      }
+
+      // Wenn der Token verifiziert wurde, aktualisiere das Passwort
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
 
       if (updateError) {
         console.error('Fehler beim Aktualisieren des Passworts:', updateError);
         return NextResponse.json(
-          { error: 'Passwort konnte nicht aktualisiert werden. Bitte fordere einen neuen Link an.' },
+          { error: 'Passwort konnte nicht aktualisiert werden. Bitte versuche es später erneut.' },
           { status: 400 }
         );
       }
