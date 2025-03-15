@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
 
 // Initialisiere Resend mit dem API-Schlüssel aus der Umgebungsvariable
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -11,6 +10,16 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// Einfache Funktion zur Generierung eines zufälligen Tokens
+function generateToken(length = 32) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  for (let i = 0; i < length; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +45,7 @@ export async function POST(request: NextRequest) {
     console.log('Starte Passwort-Zurücksetzung für:', email);
 
     // Generiere einen eindeutigen Token für die Passwort-Zurücksetzung
-    const resetToken = uuidv4();
+    const resetToken = generateToken();
     const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://myae.rapold.io'}/auth/update-password?token=${resetToken}`;
 
     try {
