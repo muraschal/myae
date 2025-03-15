@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { resetPassword } from '@/lib/supabase';
 
 export default function ResetPasswordForm() {
   const [email, setEmail] = useState('');
@@ -25,9 +24,9 @@ export default function ResetPasswordForm() {
     try {
       console.log('Sende Passwort-Zurücksetzungsanfrage für:', email);
       
-      // Direkter API-Aufruf an Supabase
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // Hardcodierte Werte für Supabase, da die Umgebungsvariablen möglicherweise nicht korrekt geladen werden
+      const supabaseUrl = 'https://xgfujkapfmsgklwozlgh.supabase.co';
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnZnVqa2FwZm1zZ2tsd296bGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU1MzA5NzcsImV4cCI6MjAzMTEwNjk3N30.Yd_QJxJiYlRIQzVrMPcFjVL8hGUnB2ixY1FRKkBTkFE';
       const redirectTo = `${window.location.origin}/auth/login?reset=true`;
       
       console.log('Verwende direkte API-Anfrage mit:', {
@@ -40,7 +39,7 @@ export default function ResetPasswordForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': supabaseKey!,
+          'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({
@@ -49,13 +48,15 @@ export default function ResetPasswordForm() {
         }),
       });
       
+      const responseData = await response.json().catch(() => ({}));
+      console.log('API-Antwort:', response.status, responseData);
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Fehler bei der API-Anfrage:', response.status, errorData);
+        console.error('Fehler bei der API-Anfrage:', response.status, responseData);
         setDetailedError({
           status: response.status,
           statusText: response.statusText,
-          data: errorData
+          data: responseData
         });
         throw new Error(`API-Fehler: ${response.status} ${response.statusText}`);
       }
@@ -78,7 +79,7 @@ export default function ResetPasswordForm() {
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
           <p>{error}</p>
           {detailedError && (
-            <details className="mt-2 text-xs">
+            <details className="mt-2 text-xs" open>
               <summary>Technische Details</summary>
               <pre className="mt-1 p-2 bg-gray-100 rounded overflow-auto">
                 {JSON.stringify(detailedError, null, 2)}
