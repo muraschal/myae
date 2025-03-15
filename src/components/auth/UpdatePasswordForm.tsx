@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function UpdatePasswordForm() {
@@ -12,6 +12,7 @@ export default function UpdatePasswordForm() {
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -45,18 +46,57 @@ export default function UpdatePasswordForm() {
     try {
       console.log('Aktualisiere Passwort mit Token');
       
-      // Passwort mit Supabase aktualisieren
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
-      });
-      
-      if (updateError) {
-        console.error('Fehler beim Aktualisieren des Passworts:', updateError);
-        throw new Error(updateError.message);
+      // Versuche zuerst, das Passwort mit Supabase zu aktualisieren
+      try {
+        // Versuche, eine Sitzung mit dem Token zu erstellen
+        const { error: signInError } = await supabase.auth.verifyOtp({
+          token_hash: token || '',
+          type: 'recovery',
+        });
+        
+        if (signInError) {
+          console.error('Fehler bei der Token-Verifizierung:', signInError);
+          throw new Error('Token konnte nicht verifiziert werden. Bitte fordere einen neuen Link an.');
+        }
+        
+        // Jetzt sollte eine Sitzung vorhanden sein, und wir können das Passwort aktualisieren
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: password
+        });
+        
+        if (updateError) {
+          console.error('Fehler beim Aktualisieren des Passworts:', updateError);
+          throw new Error(updateError.message);
+        }
+      } catch (supabaseError: any) {
+        console.error('Supabase-Fehler:', supabaseError);
+        
+        // Fallback: Sende eine direkte API-Anfrage an unseren eigenen Endpunkt
+        const response = await fetch('/api/update-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            token: token,
+            password: password 
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Fehler beim Aktualisieren des Passworts');
+        }
       }
       
       console.log('Passwort erfolgreich aktualisiert');
       setSuccess(true);
+      
+      // Nach 3 Sekunden zur Login-Seite weiterleiten
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
     } catch (err: any) {
       console.error('Fehler beim Aktualisieren des Passworts:', err);
       setError(err.message || 'Beim Aktualisieren des Passworts ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
@@ -79,8 +119,11 @@ export default function UpdatePasswordForm() {
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
           <p>Dein Passwort wurde erfolgreich aktualisiert!</p>
           <p className="mt-2">
+            Du wirst in wenigen Sekunden zur Anmeldeseite weitergeleitet.
+          </p>
+          <p className="mt-2">
             <a href="/auth/login" className="text-blue-600 hover:underline">
-              Zur Anmeldung
+              Direkt zur Anmeldung
             </a>
           </p>
         </div>
