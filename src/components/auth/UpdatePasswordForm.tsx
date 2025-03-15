@@ -8,12 +8,10 @@ import Link from 'next/link';
 function UpdatePasswordFormContent() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [step, setStep] = useState<'email' | 'password'>('email');
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -29,17 +27,7 @@ function UpdatePasswordFormContent() {
     }
   }, [searchParams]);
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@')) {
-      setError('Bitte gib eine gültige E-Mail-Adresse ein.');
-      return;
-    }
-    setError(null);
-    setStep('password');
-  };
-
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -59,7 +47,6 @@ function UpdatePasswordFormContent() {
     try {
       console.log('Aktualisiere Passwort mit Token');
       
-      // Sende eine direkte API-Anfrage an unseren eigenen Endpunkt
       const response = await fetch('/api/update-password', {
         method: 'POST',
         headers: {
@@ -67,8 +54,7 @@ function UpdatePasswordFormContent() {
         },
         body: JSON.stringify({ 
           token: token,
-          password: password,
-          email: email
+          password: password
         }),
       });
       
@@ -116,36 +102,8 @@ function UpdatePasswordFormContent() {
               </Link>
             </p>
           </div>
-        ) : step === 'email' ? (
-          <form onSubmit={handleEmailSubmit}>
-            <div className="input-field">
-              <label htmlFor="email" className="form-label">
-                E-Mail-Adresse
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="Deine E-Mail-Adresse"
-                suppressHydrationWarning
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Bitte gib die E-Mail-Adresse ein, mit der du dich registriert hast.
-              </p>
-            </div>
-            
-            <button
-              type="submit"
-              disabled={!token}
-              className="auth-button"
-            >
-              Weiter
-            </button>
-          </form>
         ) : (
-          <form onSubmit={handlePasswordSubmit}>
+          <form onSubmit={handleSubmit}>
             <div className="input-field">
               <label htmlFor="password" className="form-label">
                 Neues Passwort
@@ -181,7 +139,7 @@ function UpdatePasswordFormContent() {
             <button
               type="submit"
               disabled={loading || !token}
-              className="auth-button"
+              className="btn-primary w-full"
             >
               {loading ? 'Aktualisiere...' : 'Passwort aktualisieren'}
             </button>
