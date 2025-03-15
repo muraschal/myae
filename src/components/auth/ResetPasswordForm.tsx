@@ -25,37 +25,43 @@ export default function ResetPasswordForm() {
     try {
       console.log('Sende Passwort-Zurücksetzungsanfrage für:', email);
       
-      // Direkter Fallback-Mechanismus für den Fall, dass die Supabase-Funktion fehlschlägt
-      const fallbackUrl = `https://xgfujkapfmsgklwozlgh.supabase.co/auth/v1/recover?email=${encodeURIComponent(email)}`;
+      // Direkter API-Aufruf an Supabase
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const redirectTo = `${window.location.origin}/auth/login?reset=true`;
       
-      try {
-        // Versuche zuerst die normale Methode
-        const { error } = await resetPassword(email);
-        
-        if (error) {
-          console.error('Fehler bei der Passwort-Zurücksetzung:', error);
-          setDetailedError(error);
-          throw error;
-        }
-        
-        console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
-        setSuccess(true);
-      } catch (supabaseError) {
-        console.error('Supabase-Fehler, versuche Fallback-Methode:', supabaseError);
-        
-        // Fallback: Direkter API-Aufruf
-        try {
-          const response = await fetch(fallbackUrl);
-          if (!response.ok) {
-            throw new Error(`Fallback fehlgeschlagen: ${response.status} ${response.statusText}`);
-          }
-          console.log('Fallback-Methode erfolgreich');
-          setSuccess(true);
-        } catch (fallbackError) {
-          console.error('Auch Fallback-Methode fehlgeschlagen:', fallbackError);
-          throw fallbackError;
-        }
+      console.log('Verwende direkte API-Anfrage mit:', {
+        supabaseUrl,
+        redirectTo
+      });
+      
+      // Direkte Fetch-Anfrage an die Supabase API
+      const response = await fetch(`${supabaseUrl}/auth/v1/recover`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey!,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          email,
+          redirect_to: redirectTo,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Fehler bei der API-Anfrage:', response.status, errorData);
+        setDetailedError({
+          status: response.status,
+          statusText: response.statusText,
+          data: errorData
+        });
+        throw new Error(`API-Fehler: ${response.status} ${response.statusText}`);
       }
+      
+      console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
+      setSuccess(true);
     } catch (err: any) {
       console.error('Fehler beim Zurücksetzen des Passworts:', err);
       setError(err.message || 'Beim Zurücksetzen des Passworts ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
@@ -128,6 +134,13 @@ export default function ResetPasswordForm() {
           <a href="/auth/login" className="text-blue-600 hover:underline">
             Zurück zur Anmeldung
           </a>
+          {' | '}
+          <button 
+            onClick={() => window.location.href = '/auth/signup'} 
+            className="text-blue-600 hover:underline"
+          >
+            Neues Konto erstellen
+          </button>
         </p>
       </div>
     </div>
