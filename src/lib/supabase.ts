@@ -76,10 +76,37 @@ export async function signOut() {
 }
 
 /**
- * Fordere einen Passwort-Reset für die angegebene E-Mail an
+ * Sendet eine E-Mail zum Zurücksetzen des Passworts
  * @param email E-Mail-Adresse des Benutzers
  */
 export async function resetPassword(email: string) {
-  const supabase = createClient();
-  return supabase.auth.resetPasswordForEmail(email);
+  try {
+    console.log('Starte Passwort-Zurücksetzung für:', email);
+    console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('Site URL:', siteUrl);
+    
+    const supabase = createClient();
+    
+    // Konfiguriere die Passwort-Zurücksetzung mit expliziter Weiterleitungs-URL
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/login?reset=true`,
+    });
+    
+    if (error) {
+      console.error('Fehler bei der Passwort-Zurücksetzung:', error);
+      return { data, error };
+    }
+    
+    console.log('Passwort-Zurücksetzungs-E-Mail erfolgreich gesendet');
+    return { data, error: null };
+  } catch (err) {
+    console.error('Unerwarteter Fehler bei der Passwort-Zurücksetzung:', err);
+    return { 
+      data: null, 
+      error: {
+        message: err instanceof Error ? err.message : 'Ein unerwarteter Fehler ist aufgetreten',
+        status: 500
+      }
+    };
+  }
 } 

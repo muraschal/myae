@@ -14,16 +14,26 @@ export default function ResetPasswordForm() {
     setLoading(true);
     setError(null);
     
+    if (!email || !email.includes('@')) {
+      setError('Bitte gib eine gültige E-Mail-Adresse ein.');
+      setLoading(false);
+      return;
+    }
+    
     try {
+      console.log('Sende Passwort-Zurücksetzungsanfrage für:', email);
       const { error } = await resetPassword(email);
       
       if (error) {
+        console.error('Fehler bei der Passwort-Zurücksetzung:', error);
         throw error;
       }
       
+      console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Beim Zurücksetzen des Passworts ist ein Fehler aufgetreten.');
+      console.error('Fehler beim Zurücksetzen des Passworts:', err);
+      setError(err.message || 'Beim Zurücksetzen des Passworts ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +51,7 @@ export default function ResetPasswordForm() {
       
       {success ? (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
-          <p>Eine E-Mail zum Zurücksetzen des Passworts wurde gesendet! Bitte überprüfe deinen Posteingang.</p>
+          <p>Eine E-Mail zum Zurücksetzen des Passworts wurde gesendet! Bitte überprüfe deinen Posteingang und auch den Spam-Ordner.</p>
           <p className="mt-2">
             <a href="/auth/login" className="text-blue-600 hover:underline">
               Zurück zur Anmeldung
@@ -61,6 +71,7 @@ export default function ResetPasswordForm() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 border rounded-md"
               required
+              placeholder="deine@email.com"
             />
             <p className="text-xs text-gray-500 mt-1">
               Gib die E-Mail-Adresse ein, mit der du dich registriert hast.
