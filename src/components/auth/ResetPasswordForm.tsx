@@ -24,41 +24,25 @@ export default function ResetPasswordForm() {
     try {
       console.log('Sende Passwort-Zurücksetzungsanfrage für:', email);
       
-      // Hardcodierte Werte für Supabase, da die Umgebungsvariablen möglicherweise nicht korrekt geladen werden
-      const supabaseUrl = 'https://xgfujkapfmsgklwozlgh.supabase.co';
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnZnVqa2FwZm1zZ2tsd296bGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU1MzA5NzcsImV4cCI6MjAzMTEwNjk3N30.Yd_QJxJiYlRIQzVrMPcFjVL8hGUnB2ixY1FRKkBTkFE';
-      const redirectTo = `${window.location.origin}/auth/login?reset=true`;
-      
-      console.log('Verwende direkte API-Anfrage mit:', {
-        supabaseUrl,
-        redirectTo
-      });
-      
-      // Direkte Fetch-Anfrage an die Supabase API
-      const response = await fetch(`${supabaseUrl}/auth/v1/recover`, {
+      // Verwende unsere neue API-Route
+      const response = await fetch('/api/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({
-          email,
-          redirect_to: redirectTo,
-        }),
+        body: JSON.stringify({ email }),
       });
       
-      const responseData = await response.json().catch(() => ({}));
-      console.log('API-Antwort:', response.status, responseData);
+      const data = await response.json();
+      console.log('API-Antwort:', response.status, data);
       
       if (!response.ok) {
-        console.error('Fehler bei der API-Anfrage:', response.status, responseData);
         setDetailedError({
           status: response.status,
           statusText: response.statusText,
-          data: responseData
+          data: data
         });
-        throw new Error(`API-Fehler: ${response.status} ${response.statusText}`);
+        throw new Error(data.error || `API-Fehler: ${response.status}`);
       }
       
       console.log('Passwort-Zurücksetzungsanfrage erfolgreich gesendet');
