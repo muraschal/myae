@@ -7,10 +7,12 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 export default function UpdatePasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [step, setStep] = useState<'email' | 'password'>('email');
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -26,7 +28,17 @@ export default function UpdatePasswordForm() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setError('Bitte gib eine gültige E-Mail-Adresse ein.');
+      return;
+    }
+    setError(null);
+    setStep('password');
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -46,48 +58,23 @@ export default function UpdatePasswordForm() {
     try {
       console.log('Aktualisiere Passwort mit Token');
       
-      // Versuche zuerst, das Passwort mit Supabase zu aktualisieren
-      try {
-        // Versuche, eine Sitzung mit dem Token zu erstellen
-        const { error: signInError } = await supabase.auth.verifyOtp({
-          token_hash: token || '',
-          type: 'recovery',
-        });
-        
-        if (signInError) {
-          console.error('Fehler bei der Token-Verifizierung:', signInError);
-          throw new Error('Token konnte nicht verifiziert werden. Bitte fordere einen neuen Link an.');
-        }
-        
-        // Jetzt sollte eine Sitzung vorhanden sein, und wir können das Passwort aktualisieren
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: password
-        });
-        
-        if (updateError) {
-          console.error('Fehler beim Aktualisieren des Passworts:', updateError);
-          throw new Error(updateError.message);
-        }
-      } catch (supabaseError: any) {
-        console.error('Supabase-Fehler:', supabaseError);
-        
-        // Fallback: Sende eine direkte API-Anfrage an unseren eigenen Endpunkt
-        const response = await fetch('/api/update-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            token: token,
-            password: password 
-          }),
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Fehler beim Aktualisieren des Passworts');
-        }
+      // Sende eine direkte API-Anfrage an unseren eigenen Endpunkt
+      const response = await fetch('/api/update-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          token: token,
+          password: password,
+          email: email
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Aktualisieren des Passworts');
       }
       
       console.log('Passwort erfolgreich aktualisiert');
@@ -127,8 +114,38 @@ export default function UpdatePasswordForm() {
             </a>
           </p>
         </div>
+      ) : step === 'email' ? (
+        <form onSubmit={handleEmailSubmit}>
+          <div className="mb-6">
+            <label htmlFor="email" className="block mb-2 text-sm font-medium">
+              E-Mail-Adresse
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              required
+              placeholder="Deine E-Mail-Adresse"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Bitte gib die E-Mail-Adresse ein, mit der du dich registriert hast.
+            </p>
+          </div>
+          
+          <button
+            type="submit"
+            disabled={!token}
+            className={`w-full p-2 text-white bg-blue-600 rounded-md ${
+              !token ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
+            }`}
+          >
+            Weiter
+          </button>
+        </form>
       ) : (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handlePasswordSubmit}>
           <div className="mb-4">
             <label htmlFor="password" className="block mb-2 text-sm font-medium">
               Neues Passwort
