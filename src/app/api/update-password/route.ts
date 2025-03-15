@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: user, error: userError } = await supabase.auth.admin.getUserById(token);
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(token);
 
-    if (userError || !user) {
+    if (userError || !userData?.user) {
       return NextResponse.json(
         { error: 'Ungültiger oder abgelaufener Token' },
         { status: 401 }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(
-      user.id,
+      userData.user.id,
       { password: password }
     );
 
