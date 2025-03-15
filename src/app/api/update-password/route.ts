@@ -1,81 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function POST(request: NextRequest) {
   try {
-    const { token, password } = await request.json();
+    const { password, token } = await request.json();
 
-    if (!token) {
+    if (!password || !token) {
       return NextResponse.json(
-        { error: 'Token ist erforderlich.' },
+        { error: 'Passwort und Token sind erforderlich' },
         { status: 400 }
       );
     }
 
-    if (!password || password.length < 8) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { error: 'Das Passwort muss mindestens 8 Zeichen lang sein.' },
+        { error: 'Das Passwort muss mindestens 6 Zeichen lang sein' },
         { status: 400 }
       );
     }
 
-    console.log('Starte Passwort-Aktualisierung mit Token');
+    const { data: user, error: userError } = await supabase.auth.admin.getUserById(token);
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        }
-      }
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Ungültiger oder abgelaufener Token' },
+        { status: 401 }
+      );
+    }
+
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      user.id,
+      { password: password }
     );
 
-    try {
-      // Versuche zuerst den Token zu verifizieren
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        token,
-        type: 'recovery'
-      });
-
-      if (verifyError) {
-        console.error('Fehler bei der Token-Verifizierung:', verifyError);
-        return NextResponse.json(
-          { error: 'Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.' },
-          { status: 400 }
-        );
-      }
-
-      // Wenn der Token verifiziert wurde, aktualisiere das Passwort
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
-      });
-
-      if (updateError) {
-        console.error('Fehler beim Aktualisieren des Passworts:', updateError);
-        return NextResponse.json(
-          { error: 'Passwort konnte nicht aktualisiert werden. Bitte versuche es später erneut.' },
-          { status: 400 }
-        );
-      }
-
-      console.log('Passwort erfolgreich aktualisiert');
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Passwort wurde erfolgreich aktualisiert.' 
-      });
-
-    } catch (error: any) {
-      console.error('Fehler bei der Supabase-Anfrage:', error);
+    if (updateError) {
       return NextResponse.json(
-        { error: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es später erneut.' },
+        { error: 'Fehler beim Aktualisieren des Passworts' },
         { status: 500 }
       );
     }
-  } catch (error: any) {
-    console.error('Unerwarteter Fehler:', error);
+
     return NextResponse.json(
-      { error: 'Ein unerwarteter Fehler ist aufgetreten.' },
+      { message: 'Passwort erfolgreich aktualisiert' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Fehler beim Passwort-Update:', error);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
       { status: 500 }
     );
   }
