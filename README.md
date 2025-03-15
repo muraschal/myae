@@ -1,20 +1,22 @@
-# myÆ - Dein KI-gesteuerter Tagesbegleiter 🌟
+# myÆ - Dein strategischer KI-Berater für außergewöhnlichen Erfolg 🚀
 
-> "Jeden Tag eine neue Perspektive, jeden Morgen eine inspirierende Nachricht."
+> "Brutale Ehrlichkeit, strategische Brillanz, kompromisslose Ergebnisse."
 
-myÆ ist mehr als nur ein E-Mail-System - es ist dein persönlicher KI-Begleiter, der dich jeden Morgen mit einer sorgfältig kuratierten, personalisierten Nachricht inspiriert. Durch die Kombination von modernster KI-Technologie (GPT-4), historischen Fakten und DALL-E generierten Bildern erschafft myÆ ein einzigartiges, täglich wechselndes Erlebnis.
+myÆ ist dein persönlicher strategischer Berater mit einem IQ von 180, der dir hilft, die nächste Milliarden-Dollar-Idee zu entwickeln und umzusetzen. Durch die Kombination von modernster KI-Technologie (GPT-4) mit tiefgreifender Expertise in Psychologie, Strategie und Umsetzung identifiziert myÆ kritische Lücken in deinem Denken und Handeln und fordert dich heraus, über deine Grenzen hinauszuwachsen.
 
 ## ✨ Highlights
 
-- **Personalisierte KI-Nachrichten**: Tägliche E-Mails, die auf deine Interessen und deinen Fokus abgestimmt sind
-- **Historische Fakten**: Jeden Tag ein relevanter historischer Fakt, der dich zum Nachdenken anregt
-- **KI-generierte Bilder**: Einzigartige, thematisch passende Bilder durch DALL-E
-- **Schweizer Präzision**: Pünktlich um 8:00 Uhr in deinem Posteingang
-- **Minimalistisches Design**: Klare, lesbare Struktur mit modernem Swiss Design
+- **Brutale Ehrlichkeit**: Keine Ausreden, keine Beschönigungen - nur die harte Wahrheit, die du hören musst
+- **Strategische Brillanz**: Identifikation von Hebelpunkten mit maximaler Wirkung für dein Business
+- **Systemisches Denken**: Tiefgehende Ursachenanalysen statt oberflächlicher Lösungen
+- **Konkrete Aktionspläne**: Umsetzbare Schritte, die dich sofort voranbringen
+- **Blinde-Flecken-Analyse**: Aufdeckung deiner unbewussten Rationalisierungen und Einschränkungen
+- **Mentale Modelle**: Spezifische Frameworks für bessere Entscheidungen und strategisches Denken
+- **Persönliche Herausforderungen**: Direkte Aufgaben, die dich aus deiner Komfortzone bringen
 
 ## 📌 Projektübersicht
 
-myÆ ist ein KI-gesteuertes Gedächtnissystem, das OpenAI GPT verwendet, um personalisierte tägliche Nachrichten und intelligente Antworten zu liefern. Die Architektur ist serverless-first, für Vercel optimiert und für Skalierbarkeit konzipiert.
+myÆ ist ein KI-gesteuertes strategisches Beratersystem, das OpenAI GPT verwendet, um tiefgehende Analysen, Herausforderungen und Aktionspläne zu liefern. Die Architektur ist serverless-first, für Vercel optimiert und für Skalierbarkeit konzipiert.
 
 ## 📑 Inhaltsverzeichnis
 
@@ -23,7 +25,6 @@ myÆ ist ein KI-gesteuertes Gedächtnissystem, das OpenAI GPT verwendet, um pers
   - [Authentifizierung](#authentifizierung)
   - [KI-Integration](#ki-integration)
   - [Gedächtnisschichten](#gedächtnisschichten)
-  - [E-Mail-Service](#e-mail-service)
   - [Frontend](#frontend)
   - [Deployment](#deployment)
 - [Architektur](#-architektur)
@@ -31,7 +32,6 @@ myÆ ist ein KI-gesteuertes Gedächtnissystem, das OpenAI GPT verwendet, um pers
   - [API-Routen](#api-routen)
   - [Gedächtnissystem](#gedächtnissystem)
   - [Authentifizierungssystem](#authentifizierungssystem)
-  - [E-Mail-System](#e-mail-system)
   - [Umgebungsvariablen](#umgebungsvariablen)
 - [Datenfluss](#-datenfluss)
   - [KI-Anfrage-Workflow](#ki-anfrage-workflow)
@@ -109,18 +109,6 @@ myÆ ist ein KI-gesteuertes Gedächtnissystem, das OpenAI GPT verwendet, um pers
     - `users`: Erweiterte Benutzerprofile
     - `memories`: Langzeit-Gedächtnisdaten mit Benutzer-Referenz
     - `preferences`: Benutzerspezifische Einstellungen
-
-### E-Mail-Service
-
-- **Resend**
-  - Implementiert in `src/lib/email.ts`
-  - Verwendet die offizielle Resend SDK (v4.1.2)
-  - Funktionen:
-    - `sendResponseEmail`: Sendet KI-Antworten per E-Mail
-    - HTML-Formatierung mit responsivem Design
-    - Fehlerbehandlung und Logging
-  - Standardempfänger konfigurierbar
-  - Absender: `MyAE <noreply@myae.rapold.io>`
 
 ### Frontend
 
@@ -311,35 +299,6 @@ Das Gedächtnissystem verwendet einen mehrschichtigen Ansatz:
   - Leitet authentifizierte Benutzer von Auth-Seiten weg
   - Speichert die ursprüngliche URL für Weiterleitung nach der Anmeldung
   - Fehlerbehandlung mit Auth-Fehler-Cookies
-
-### E-Mail-System
-
-#### Tägliche E-Mails
-
-- **Automatischer Versand**: Jeden Morgen um 8:00 Uhr (Schweizer Zeit)
-- **Personalisierte Inhalte**:
-  - Einleitung basierend auf Benutzerinteressen
-  - Tagesrelevante historische Fakten
-  - Konkrete Handlungsschritte für den Tag
-- **Visuelles Element**: DALL-E generierte Bilder im Swiss Design Stil
-- **BCC-Kopie**: Automatische BCC an System-Administrator für Qualitätssicherung
-
-#### E-Mail-Struktur
-
-```typescript
-interface EmailContent {
-  subject: string;
-  preheader: string;
-  greeting: string;
-  mainContent: {
-    intro: string;
-    historyFact: string;
-    actionSteps: string;
-  };
-  callToAction: string;
-  imageUrl: string;
-}
-```
 
 ### Umgebungsvariablen
 

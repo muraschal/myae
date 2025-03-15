@@ -6,8 +6,8 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'MyAE - Dein KI Assistent',
-  description: 'MyAE ist ein KI-Assistent, der hilft, Inhalte zu erstellen und Schreibarbeit zu erleichtern.',
+  title: 'MyAE - Dein strategischer KI-Berater',
+  description: 'MyAE ist dein persönlicher strategischer Berater mit einem IQ von 180, der dir hilft, die nächste Milliarden-Dollar-Idee zu entwickeln und umzusetzen.',
   icons: {
     icon: '/icon/myae-icon_4x4.png',
     apple: '/icon/myae-icon_4x4.png',

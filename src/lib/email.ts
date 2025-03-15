@@ -26,7 +26,7 @@ interface EmailContent {
 }
 
 /**
- * E-Mail mit einer Antwort vom KI-Assistenten senden
+ * E-Mail mit einer strategischen Beratung vom KI-Assistenten senden
  * 
  * @param prompt Die Anfrage des Benutzers
  * @param result Die Antwort des KI-Assistenten
@@ -40,20 +40,25 @@ export async function sendResponseEmail(
 ) {
   try {
     const response = await resend.emails.send({
-      from: 'MyAE <noreply@myae.rapold.io>',
+      from: 'MyAE Strategischer Berater <noreply@myae.rapold.io>',
       to: recipient,
-      subject: `KI-Antwort: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
-      text: `Anfrage: ${prompt}\n\nAntwort: ${result}`,
+      subject: `Strategische Analyse: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`,
+      text: `Anfrage: ${prompt}\n\nStrategische Analyse: ${result}`,
       html: `
-        <div>
-          <h2>Deine Anfrage an den KI-Assistenten</h2>
-          <div style="padding: 10px; background-color: #f5f5f5; border-radius: 5px; margin-bottom: 20px;">
-            <p>${prompt.replace(/\n/g, '<br>')}</p>
+        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 20px; color: #333;">
+          <h2 style="color: #1a365d; border-bottom: 2px solid #3182ce; padding-bottom: 10px;">Deine strategische Anfrage</h2>
+          <div style="padding: 15px; background-color: #f7fafc; border-radius: 5px; margin-bottom: 25px; border-left: 4px solid #3182ce;">
+            <p style="margin: 0; line-height: 1.6;">${prompt.replace(/\n/g, '<br>')}</p>
           </div>
           
-          <h2>Antwort des KI-Assistenten</h2>
-          <div style="padding: 10px; background-color: #f0f7ff; border-radius: 5px;">
-            <p>${result.replace(/\n/g, '<br>')}</p>
+          <h2 style="color: #1a365d; border-bottom: 2px solid #3182ce; padding-bottom: 10px;">Strategische Analyse</h2>
+          <div style="padding: 15px; background-color: #ebf8ff; border-radius: 5px; border-left: 4px solid #3182ce;">
+            <p style="margin: 0; line-height: 1.6;">${result.replace(/\n/g, '<br>')}</p>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #718096; text-align: center;">
+            <p>Diese Analyse wurde von myÆ, deinem strategischen KI-Berater, erstellt.</p>
+            <p>© ${new Date().getFullYear()} myÆ - Alle Rechte vorbehalten</p>
           </div>
         </div>
       `,
