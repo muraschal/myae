@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialisiere Resend mit dem API-Schlüssel
-const resend = new Resend(process.env.RESEND_API_KEY || 're_Uwe4fws5_4pMYmkfhwtuCaXEWzttCSjSJ');
+// Initialisiere Resend mit dem API-Schlüssel aus der Umgebungsvariable
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Erstelle einen Supabase-Server-Client
 const supabase = createClient(
@@ -13,6 +13,15 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Prüfe, ob der API-Schlüssel vorhanden ist
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY ist nicht in den Umgebungsvariablen definiert');
+      return NextResponse.json(
+        { error: 'E-Mail-Dienst ist nicht korrekt konfiguriert' },
+        { status: 500 }
+      );
+    }
+
     // Extrahiere die E-Mail-Adresse aus dem Request-Body
     const { email } = await request.json();
 
