@@ -25,16 +25,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Das Passwort muss mindestens 6 Zeichen lang sein' },
+        { error: 'Das Passwort muss mindestens 8 Zeichen lang sein' },
         { status: 400 }
       );
     }
 
-    // Versuche das Passwort direkt mit dem Reset-Token zu aktualisieren
+    // Versuche das Passwort mit dem Reset-Token zu aktualisieren
+    const { data: userData, error: userError } = await supabase.auth.verifyOtp({
+      token_hash: token,
+      type: 'recovery'
+    });
+
+    if (userError || !userData?.user) {
+      console.error('Token-Validierungsfehler:', userError);
+      return NextResponse.json(
+        { error: 'Ungültiger oder abgelaufener Token' },
+        { status: 401 }
+      );
+    }
+
     const { error: updateError } = await supabase.auth.admin.updateUserById(
-      token,
+      userData.user.id,
       { password: password }
     );
 
