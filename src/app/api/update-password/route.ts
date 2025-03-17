@@ -32,21 +32,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(token);
-
-    if (userError || !userData?.user) {
-      return NextResponse.json(
-        { error: 'Ungültiger oder abgelaufener Token' },
-        { status: 401 }
-      );
-    }
-
+    // Versuche das Passwort direkt mit dem Reset-Token zu aktualisieren
     const { error: updateError } = await supabase.auth.admin.updateUserById(
-      userData.user.id,
+      token,
       { password: password }
     );
 
     if (updateError) {
+      console.error('Fehler beim Passwort-Update:', updateError);
       return NextResponse.json(
         { error: 'Fehler beim Aktualisieren des Passworts' },
         { status: 500 }
