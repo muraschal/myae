@@ -12,7 +12,7 @@ function UpdatePasswordFormContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<Record<string, any>>({});
+  const [debugInfo, setDebugInfo] = useState({});
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -22,7 +22,7 @@ function UpdatePasswordFormContent() {
     const urlToken = searchParams.get('token');
     if (urlToken) {
       setToken(urlToken);
-      console.log('Token aus URL gefunden:', urlToken.substring(0, 4) + '...' + urlToken.substring(urlToken.length - 4));
+      console.log('Token aus URL gefunden:', urlToken.substring(0, 4) + '...');
     } else {
       setError('Kein gültiger Token gefunden. Bitte fordere einen neuen Link zum Zurücksetzen des Passworts an.');
     }
@@ -32,20 +32,14 @@ function UpdatePasswordFormContent() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setDebugInfo({});
     
     // Debug-Informationen zur Formularübermittlung
-    const debugFormSubmit = {
-      zeitpunkt: new Date().toISOString(),
+    console.log('DEBUG FORMULAR:', { 
       tokenVorhanden: !!token,
       tokenLänge: token ? token.length : 0,
-      tokenAuszug: token ? `${token.substring(0, 4)}...${token.substring(token.length - 4)}` : 'keiner',
       passwordLänge: password.length,
       passwordsStimmenÜberein: password === confirmPassword
-    };
-    
-    console.log('DEBUG FORMULAR-ÜBERMITTLUNG:', debugFormSubmit);
-    setDebugInfo(prev => ({ ...prev, formular: debugFormSubmit }));
+    });
     
     if (password.length < 8) {
       setError('Das Passwort muss mindestens 8 Zeichen lang sein.');
@@ -63,45 +57,27 @@ function UpdatePasswordFormContent() {
       console.log('Aktualisiere Passwort mit Token');
       
       // Debug-Header um zu sehen, was gesendet wird
-      const requestBody = { 
-        token: token,
-        password: password
-      };
+      console.log('DEBUG SENDE ANFRAGE an /api/update-password');
       
-      console.log('DEBUG API-ANFRAGE:', {
-        endpunkt: '/api/update-password',
-        methode: 'POST',
-        body: {
-          ...requestBody,
-          token: token ? `${token.substring(0, 4)}...${token.substring(token.length - 4)}` : null
-        }
-      });
-      
-      const startTime = Date.now();
       const response = await fetch('/api/update-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ 
+          token: token,
+          password: password
+        }),
       });
-      const endTime = Date.now();
-      const responseTime = endTime - startTime;
       
       const data = await response.json();
       
       // Debug-Informationen zur Antwort
-      const debugResponse = {
-        zeitpunkt: new Date().toISOString(),
+      console.log('DEBUG ANTWORT:', {
         status: response.status,
-        statusText: response.statusText,
-        antwortzeit: responseTime + 'ms',
-        erfolg: response.ok,
+        ok: response.ok,
         daten: data
-      };
-      
-      console.log('DEBUG API-ANTWORT:', debugResponse);
-      setDebugInfo(prev => ({ ...prev, antwort: debugResponse }));
+      });
       
       if (!response.ok) {
         throw new Error(data.error || 'Fehler beim Aktualisieren des Passworts');
@@ -115,18 +91,8 @@ function UpdatePasswordFormContent() {
         router.push('/auth/login');
       }, 3000);
     } catch (err: any) {
-      console.error('Fehler beim Aktualisieren des Passworts:', err);
+      console.error('Fehler beim Aktualisieren des Passworts:', err.message);
       setError(err.message || 'Beim Aktualisieren des Passworts ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
-      
-      // Debug-Informationen zum Fehler
-      const debugError = {
-        zeitpunkt: new Date().toISOString(),
-        nachricht: err.message,
-        stack: err.stack,
-      };
-      
-      console.log('DEBUG FEHLER:', debugError);
-      setDebugInfo(prev => ({ ...prev, fehler: debugError }));
     } finally {
       setLoading(false);
     }
@@ -140,14 +106,6 @@ function UpdatePasswordFormContent() {
         {error && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-md text-red-500">
             {error}
-            {Object.keys(debugInfo).length > 0 && (
-              <details className="mt-2 text-xs">
-                <summary>Debug-Informationen</summary>
-                <pre className="overflow-auto max-h-40 p-2 bg-gray-800 rounded mt-1">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </details>
-            )}
           </div>
         )}
         
@@ -220,7 +178,7 @@ function UpdatePasswordFormContent() {
               <summary className="cursor-pointer text-gray-400">Token-Info</summary>
               <div className="p-2 bg-gray-800 rounded mt-1">
                 <p>Token-Länge: {token.length}</p>
-                <p>Token: {token.substring(0, 4)}...{token.substring(token.length - 4)}</p>
+                <p>Token-Anfang: {token.substring(0, 4)}...</p>
               </div>
             </details>
           </div>

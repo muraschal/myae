@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// DEBUG: Supabase-URL und Service Role Key (ersten 4 Zeichen)
+console.log('DEBUG CONFIG:', {
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || 'fehlt',
+  serviceRoleKeyVorhanden: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+});
+
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('NEXT_PUBLIC_SUPABASE_URL ist nicht definiert');
 }
@@ -8,13 +14,6 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY ist nicht definiert');
 }
-
-// DEBUG: Supabase-URL und Service Role Key (ersten 4 Zeichen)
-console.log('DEBUG CONFIG:', {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 
-    `${process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 4)}...` : 'nicht definiert'
-});
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -29,7 +28,6 @@ export async function POST(request: NextRequest) {
     console.log('DEBUG EINGABE:', { 
       tokenErhalten: !!token,
       tokenLänge: token ? token.length : 0,
-      tokenWert: token ? `${token.substring(0, 4)}...${token.substring(token.length - 4)}` : 'keiner',
       passwordLänge: password ? password.length : 0
     });
 
@@ -58,10 +56,7 @@ export async function POST(request: NextRequest) {
     console.log('DEBUG VERIFIZIERUNG 1:', {
       erfolg: !verifyResult1.error,
       fehlerNachricht: verifyResult1.error ? verifyResult1.error.message : null,
-      fehlerStatus: verifyResult1.error ? verifyResult1.error.status : null,
-      benutzerGefunden: !!verifyResult1.data?.user,
-      benutzerId: verifyResult1.data?.user?.id ? 
-        `${verifyResult1.data.user.id.substring(0, 4)}...` : 'keine'
+      benutzerGefunden: !!verifyResult1.data?.user
     });
     
     // Wenn Versuch 1 fehlschlägt, versuchen wir es mit dem 'token' Parameter
@@ -80,10 +75,7 @@ export async function POST(request: NextRequest) {
       console.log('DEBUG VERIFIZIERUNG 2:', {
         erfolg: !verifyResult2.error,
         fehlerNachricht: verifyResult2.error ? verifyResult2.error.message : null,
-        fehlerStatus: verifyResult2.error ? verifyResult2.error.status : null,
-        benutzerGefunden: !!verifyResult2.data?.user,
-        benutzerId: verifyResult2.data?.user?.id ? 
-          `${verifyResult2.data.user.id.substring(0, 4)}...` : 'keine'
+        benutzerGefunden: !!verifyResult2.data?.user
       });
       
       user = verifyResult2.data?.user;
@@ -103,10 +95,7 @@ export async function POST(request: NextRequest) {
       console.log('DEBUG DIREKTES UPDATE:', {
         erfolg: !updateResult.error,
         fehlerNachricht: updateResult.error ? updateResult.error.message : null,
-        fehlerStatus: updateResult.error ? updateResult.error.status : null,
-        benutzerAktualisiert: !!updateResult.data?.user,
-        benutzerId: updateResult.data?.user?.id ? 
-          `${updateResult.data.user.id.substring(0, 4)}...` : 'keine'
+        benutzerAktualisiert: !!updateResult.data?.user
       });
       
       if (!updateResult.error && updateResult.data?.user) {
@@ -117,8 +106,8 @@ export async function POST(request: NextRequest) {
       }
       
       console.error('Token-Validierungsfehler:', {
-        verifyError,
-        updateError: updateResult.error
+        verifyError: verifyError?.message,
+        updateError: updateResult.error?.message
       });
       
       return NextResponse.json(
@@ -131,8 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // DEBUG: Benutzer gefunden, versuche Passwort zu aktualisieren
-    console.log('DEBUG: Benutzer gefunden, aktualisiere Passwort für ID:', 
-      user.id ? `${user.id.substring(0, 4)}...` : 'keine ID');
+    console.log('DEBUG: Benutzer gefunden, aktualisiere Passwort');
 
     // Aktualisiere das Passwort mit der Admin-API
     const { error: updateError } = await supabase.auth.admin.updateUserById(
@@ -142,9 +130,7 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error('Fehler beim Passwort-Update:', {
-        nachricht: updateError.message,
-        status: updateError.status,
-        details: updateError
+        nachricht: updateError.message
       });
       
       return NextResponse.json(
@@ -156,8 +142,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('DEBUG: Passwort erfolgreich aktualisiert für Benutzer:', 
-      user.id ? `${user.id.substring(0, 4)}...` : 'keine ID');
+    console.log('DEBUG: Passwort erfolgreich aktualisiert');
 
     return NextResponse.json(
       { message: 'Passwort erfolgreich aktualisiert' },
@@ -165,8 +150,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Unbehandelte Exception:', {
-      nachricht: error.message || 'Keine Nachricht',
-      stack: error.stack || 'Kein Stack'
+      nachricht: error.message || 'Keine Nachricht'
     });
     
     return NextResponse.json(
