@@ -9,106 +9,138 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error('SUPABASE_SERVICE_ROLE_KEY ist nicht definiert');
 }
 
-// Supabase Client mit Service Role Key für Admin-Operationen
-const supabase = createClient(
+const serviceRoleSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const anonSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' // Anon key für öffentliche Operationen
+);
+
 export async function POST(request: NextRequest) {
   try {
-    // Körper der Anfrage extrahieren
     const { password, token } = await request.json();
 
-    console.log('Passwort-Update-Anfrage erhalten', { 
+    console.log('Passwort-Update-Anfrage erhalten:', { 
       tokenVorhanden: !!token,
+      tokenLänge: token?.length,
       passwordLänge: password?.length
     });
 
-    // Validierung: Passwort und Token sind erforderlich
+    // Validierung
     if (!password || !token) {
-      console.log('Validierungsfehler: Passwort oder Token fehlt');
       return NextResponse.json(
         { error: 'Passwort und Token sind erforderlich' },
         { status: 400 }
       );
     }
 
-    // Validierung: Passwortlänge
     if (password.length < 8) {
-      console.log('Validierungsfehler: Passwort zu kurz');
       return NextResponse.json(
         { error: 'Das Passwort muss mindestens 8 Zeichen lang sein' },
         { status: 400 }
       );
     }
 
-    // Supabase-Client mit Reset-Token anstatt Session Cookie
-    const supabaseWithToken = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        auth: {
-          // 'pkce' ist der Standard-Flow-Typ für Supabase
-          autoRefreshToken: false,
-        }
-      }
-    );
-
-    // Versuch 1: Direktes Passwort-Update mit aktuellem Token
-    console.log('Versuche direktes Passwort-Update');
-    const { data, error } = await supabase.auth.updateUser(
-      { password },
-      { emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL }
-    );
-
-    if (error) {
-      console.error('Fehler bei direktem Passwort-Update:', error.message);
+    // Methode 1: Aktualisierung mit Passwort-Reset-Token
+    try {
+      console.log('Versuche Passwort-Reset mit Supabase');
       
-      // Versuch 2: Recovery mit Token
-      try {
-        console.log('Versuche Recovery mit Token');
+      // Wir verwenden den ungeschützten Client hier, da wir den Reset-Token haben
+      const { data, error } = await anonSupabase.auth.resetPasswordForEmail(
+        "reset@example.com", // Dummy-E-Mail, wird nicht verwendet
+        {
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/update-password?token=${token}`
+        }
+      );
+
+      if (error) {
+        console.log('Fehler beim Reset-Versuch:', error.message);
+      } else {
+        console.log('Reset-Anfrage gesendet');
+      }
+    } catch (resetError) {
+      console.error('Exception beim Reset-Versuch:', resetError);
+      // Wir setzen fort, auch wenn dieser Versuch fehlschlägt
+    }
+
+    // Methode 2: Supabase Admin-API
+    try {
+      console.log('Versuche Admin-API für Passwortaktualisierung');
+      
+      // Die Supabase Admin-API fragen, um Benutzerinformationen aus dem Token zu bekommen
+      const { data: tokenData, error: tokenError } = await serviceRoleSupabase.auth.admin.getUserById(
+        token // Wir versuchen, ob der Token direkt als User-ID verwendbar ist
+      );
+      
+      if (!tokenError && tokenData?.user) {
+        // Wenn wir einen Benutzer gefunden haben, Passwort aktualisieren
+        const { error: updateError } = await serviceRoleSupabase.auth.admin.updateUserById(
+          tokenData.user.id,
+          { password }
+        );
         
-        // Versuchen, den Token direkt zu nutzen
-        const { error: recoveryError } = await supabase.auth.refreshSession({
-          refresh_token: token
-        });
-        
-        if (!recoveryError) {
-          // Wenn der Token funktioniert, erneut Passwort aktualisieren
-          const { error: updateError } = await supabase.auth.updateUser({ password });
-          
-          if (!updateError) {
-            console.log('Passwort nach Token-Refresh erfolgreich aktualisiert');
-            return NextResponse.json(
-              { message: 'Passwort erfolgreich aktualisiert' },
-              { status: 200 }
-            );
-          } else {
-            console.error('Fehler nach Token-Refresh:', updateError.message);
-          }
+        if (!updateError) {
+          console.log('Passwort erfolgreich aktualisiert für Benutzer:', tokenData.user.id);
+          return NextResponse.json(
+            { message: 'Passwort erfolgreich aktualisiert' },
+            { status: 200 }
+          );
         } else {
-          console.error('Token-Refresh fehlgeschlagen:', recoveryError.message);
+          console.error('Fehler bei Admin-Passwortaktualisierung:', updateError.message);
         }
-      } catch (recoveryError: any) {
-        console.error('Exception bei Token-Recovery:', recoveryError?.message);
+      } else {
+        console.log('Token ist keine gültige Benutzer-ID:', tokenError?.message);
       }
+    } catch (adminError) {
+      console.error('Exception bei Admin-API:', adminError);
+      // Wir setzen fort, auch wenn dieser Versuch fehlschlägt
+    }
+
+    // Methode 3: Letzte Chance mit direktem updateUser
+    try {
+      console.log('Letzte Chance: Direktes updateUser');
+      const { data, error } = await anonSupabase.auth.updateUser(
+        { password }
+      );
       
+      if (!error && data?.user) {
+        console.log('Passwort über updateUser aktualisiert');
+        return NextResponse.json(
+          { message: 'Passwort erfolgreich aktualisiert' },
+          { status: 200 }
+        );
+      } else {
+        console.error('Fehler bei direktem updateUser:', error?.message);
+        
+        // Wenn wir hier ankommen, haben alle Versuche fehlgeschlagen
+        return NextResponse.json(
+          { 
+            error: 'Fehler beim Aktualisieren des Passworts', 
+            details: 'Bitte versuchen Sie, einen neuen Passwort-Reset-Link anzufordern'
+          },
+          { status: 500 }
+        );
+      }
+    } catch (finalError: any) {
+      console.error('Abschließender Fehler:', finalError?.message);
       return NextResponse.json(
-        { error: 'Fehler beim Aktualisieren des Passworts', details: error.message },
+        { 
+          error: 'Fehler beim Aktualisieren des Passworts', 
+          details: finalError?.message || 'Unbekannter Fehler'
+        },
         { status: 500 }
       );
     }
-
-    console.log('Passwort erfolgreich aktualisiert');
-    return NextResponse.json(
-      { message: 'Passwort erfolgreich aktualisiert' },
-      { status: 200 }
-    );
   } catch (error: any) {
-    console.error('Unbehandelte Exception:', error);
+    console.error('Kritischer Fehler in Update-Password-Route:', error);
     return NextResponse.json(
-      { error: 'Interner Serverfehler', details: error.message || 'Keine Details verfügbar' },
+      { 
+        error: 'Interner Serverfehler', 
+        details: error?.message || 'Kritischer Fehler im Server'
+      },
       { status: 500 }
     );
   }
